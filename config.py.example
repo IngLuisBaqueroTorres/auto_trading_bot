@@ -1,0 +1,8 @@
+EMAIL = "your_email@example.com"
+PASSWORD = "your_password"
+BALANCE_MODE = "PRACTICE"  # o "REAL"
+PAIR = "EURUSD"
+AMOUNT = 1
+DURATION = 1
+CANDLE_DURATION = 60
+NUM_CANDLES = 100
