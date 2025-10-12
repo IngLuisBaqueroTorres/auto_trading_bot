@@ -31,3 +31,27 @@ Este proyecto es educativo. No se garantiza rendimiento ni beneficios. Usar bajo
 git clone https://github.com/tuusuario/auto_trading_bot.git
 cd auto_trading_bot
 pip install -r requirements.txt
+
+
+Ejecuta tu bot normalmente durante el día:
+
+python main.py
+
+
+Al finalizar la jornada, detén el bot y ejecuta:
+
+python analyze_results.py
+
+
+Verás un resumen como este en consola:
+
+📊 === RESUMEN DE OPERACIONES ===
+🕒 Desde: 2025-10-07 07:05:12 hasta 2025-10-07 18:55:23
+💼 Total de operaciones: 42
+✅ Ganadas: 26 | ❌ Perdidas: 16
+🎯 Tasa de acierto: 61.90%
+💰 Ganancia neta: 12.50 (1.25%)
+📉 Drawdown máximo: -3.10%
+⏱️ Promedio entre operaciones: 15.2 min
+
+Y además se abrirá una gráfica del balance 📈 donde verás claramente los momentos de ganancia o pérdida.
