@@ -3,14 +3,13 @@ import time
 import pandas as pd
 from datetime import datetime
 import os
-import csv
 import subprocess
 
 from config import (
     EMAIL, PASSWORD, BALANCE_MODE, PAIR,
     AMOUNT, DURATION, CANDLE_DURATION, NUM_CANDLES
 )
-from strategies.bb_rsi_otc import bb_rsi_otc
+from strategies.bb_rsi_otc import bb_rsi_otc 
 from strategies.bb_rsi_strategy import add_indicators
 from utils.helpers import get_candle_dataframe, is_market_open, signal_to_direction
 from utils.logger import setup_logger
@@ -18,7 +17,7 @@ from utils.logger import setup_logger
 logger = setup_logger()
 
 # --- Configuración general ---
-END_HOUR = 19  # Hora local en la que se detiene el bot
+END_HOUR = 20  # Hora local en la que se detiene el bot
 LOG_FILE = "logs/operaciones.csv"
 REPORT_DIR = "reports"
 
@@ -93,10 +92,9 @@ try:
                 # Esperar al cierre de la operación antes de evaluar el resultado
                 time.sleep(DURATION * 60 + 5)
             
-                # Consultar el resultado de la operación y guardarlo
+                # Consultar el resultado de la operación
                 try:
                     profit = API.check_win_v3(order_id)
-                    result = "win" if profit > 0 else "lose" if profit < 0 else "draw"
 
                     if profit > 0:
                         logger.info(f"🏆 Operación GANADA | Profit: +{profit:.2f}")
@@ -104,22 +102,6 @@ try:
                         logger.info(f"💀 Operación PERDIDA | Pérdida: {profit:.2f}")
                     else:
                         logger.warning(f"⚠️ Resultado neutro | Profit: {profit:.2f}")
-
-                    # ✅ Guardar en CSV
-                    file_exists = os.path.exists(LOG_FILE)
-                    with open(LOG_FILE, mode="a", newline="", encoding="utf-8") as file:
-                        writer = csv.writer(file)
-                        if not file_exists:
-                            writer.writerow(["timestamp", "pair", "direction", "amount", "result", "profit"])
-                        writer.writerow([
-                            datetime.now().strftime("%Y-%m-%d %H:%M:%S"),
-                            PAIR,
-                            direction,
-                            AMOUNT,
-                            result,
-                            round(profit, 2)
-                        ])
-
                 except Exception as e:
                     logger.error(f"⚠️ Error al consultar resultado de operación: {e}")
             

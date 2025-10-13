@@ -1071,3 +1071,137 @@
 2025-10-12 18:44:00,683 — INFO — 🛑 Interrupción manual. Cerrando bot...
 2025-10-12 18:44:00,684 — INFO — 📊 Ejecutando análisis de resultados diarios...
 2025-10-12 18:44:00,886 — INFO — ✅ Reporte del día guardado en: reports\resumen_2025-10-12_18-44-00.csv
+2025-10-12 18:45:43,588 — INFO — 🗓️ Iniciando registro en archivo: logs\bot_2025-10-12.log
+2025-10-12 18:45:43,591 — INFO — 🗓️ Iniciando registro en archivo: logs\bot_2025-10-12.log
+2025-10-12 18:45:43,593 — INFO — 🗓️ Iniciando registro en archivo: logs\bot_2025-10-12.log
+2025-10-12 18:45:43,594 — INFO — 🗓️ Iniciando registro en archivo: logs\bot_2025-10-12.log
+2025-10-12 18:45:43,596 — INFO — 🔌 Conectando a IQ Option...
+2025-10-12 18:45:46,091 — INFO — ✅ Conectado correctamente en modo PRACTICE
+2025-10-12 18:45:46,092 — DEBUG — 🔍 is_market_open(): verificando con candles
+2025-10-12 18:46:22,447 — INFO — 🛑 Interrupción manual. Cerrando bot...
+2025-10-12 18:46:22,447 — INFO — 📊 Ejecutando análisis de resultados diarios...
+2025-10-12 18:46:22,628 — WARNING — ⚠️ No se encontró archivo de operaciones para generar reporte.
+2025-10-12 18:46:26,167 — INFO — 🗓️ Iniciando registro en archivo: logs\bot_2025-10-12.log
+2025-10-12 18:46:26,169 — INFO — 🗓️ Iniciando registro en archivo: logs\bot_2025-10-12.log
+2025-10-12 18:46:26,172 — INFO — 🗓️ Iniciando registro en archivo: logs\bot_2025-10-12.log
+2025-10-12 18:46:26,175 — INFO — 🗓️ Iniciando registro en archivo: logs\bot_2025-10-12.log
+2025-10-12 18:46:26,176 — INFO — 🔌 Conectando a IQ Option...
+2025-10-12 18:46:29,573 — INFO — ✅ Conectado correctamente en modo PRACTICE
+2025-10-12 18:46:29,574 — DEBUG — 🔍 is_market_open(): verificando con candles
+2025-10-12 18:46:34,126 — INFO — 🛑 Interrupción manual. Cerrando bot...
+2025-10-12 18:46:34,127 — INFO — 📊 Ejecutando análisis de resultados diarios...
+2025-10-12 18:46:34,302 — WARNING — ⚠️ No se encontró archivo de operaciones para generar reporte.
+2025-10-12 18:46:51,715 — INFO — 🗓️ Iniciando registro en archivo: logs\bot_2025-10-12.log
+2025-10-12 18:46:51,717 — INFO — 🗓️ Iniciando registro en archivo: logs\bot_2025-10-12.log
+2025-10-12 18:46:51,720 — INFO — 🗓️ Iniciando registro en archivo: logs\bot_2025-10-12.log
+2025-10-12 18:46:51,721 — INFO — 🗓️ Iniciando registro en archivo: logs\bot_2025-10-12.log
+2025-10-12 18:46:51,722 — INFO — 🔌 Conectando a IQ Option...
+2025-10-12 18:46:53,888 — INFO — ✅ Conectado correctamente en modo PRACTICE
+2025-10-12 18:46:53,888 — DEBUG — 🔍 is_market_open(): verificando con candles
+2025-10-12 18:47:12,088 — INFO — 🛑 Interrupción manual. Cerrando bot...
+2025-10-12 18:47:12,089 — INFO — 📊 Ejecutando análisis de resultados diarios...
+2025-10-12 18:47:12,257 — WARNING — ⚠️ No se encontró archivo de operaciones para generar reporte.
+2025-10-12 18:47:15,353 — INFO — 🗓️ Iniciando registro en archivo: logs\bot_2025-10-12.log
+2025-10-12 18:47:15,355 — INFO — 🗓️ Iniciando registro en archivo: logs\bot_2025-10-12.log
+2025-10-12 18:47:15,358 — INFO — 🗓️ Iniciando registro en archivo: logs\bot_2025-10-12.log
+2025-10-12 18:47:15,360 — INFO — 🗓️ Iniciando registro en archivo: logs\bot_2025-10-12.log
+2025-10-12 18:47:15,361 — INFO — 🔌 Conectando a IQ Option...
+2025-10-12 18:47:17,730 — INFO — ✅ Conectado correctamente en modo PRACTICE
+2025-10-12 18:47:17,731 — DEBUG — 🔍 is_market_open(): verificando con candles
+2025-10-12 18:47:18,205 — INFO — ✅ Se obtuvo al menos una vela. Mercado abierto.
+2025-10-12 18:47:18,511 — DEBUG — [OTC-EVAL] side=BUY score=1.17 reasons=['bb_width_ok(0.0033)', 'near_ema200', 'close_above_bb_low', 'bull_body(0.68)'] rsi=60.20 bbw=0.0033 atr=0.001239
+2025-10-12 18:47:18,512 — INFO — ✅ OTC SIGNAL: BUY | score=1.17 | reasons=['bb_width_ok(0.0033)', 'near_ema200', 'close_above_bb_low', 'bull_body(0.68)'] | rsi=60.20
+2025-10-12 18:47:18,512 — INFO — 📊 Señal detectada: BUY → Ejecutando CALL
+2025-10-12 18:47:19,194 — INFO — ✅ Orden ejecutada correctamente | ID: 13181490259
+2025-10-12 18:48:24,199 — INFO — 💀 Operación PERDIDA | Pérdida: -1.00
+2025-10-12 18:49:29,213 — DEBUG — 🔍 is_market_open(): verificando con candles
+2025-10-12 18:49:29,448 — INFO — ✅ Se obtuvo al menos una vela. Mercado abierto.
+2025-10-12 18:49:29,735 — DEBUG — [OTC-EVAL] side=SELL score=1.40 reasons=['near_ema200', 'rsi_falling(58.7->57.8)', 'close_below_bb_high', 'weak_body(0.11)'] rsi=57.78 bbw=0.0035 atr=0.001127
+2025-10-12 18:49:29,735 — INFO — ✅ OTC SIGNAL: SELL | score=1.40 | reasons=['near_ema200', 'rsi_falling(58.7->57.8)', 'close_below_bb_high', 'weak_body(0.11)'] | rsi=57.78
+2025-10-12 18:49:29,736 — INFO — 📊 Señal detectada: SELL → Ejecutando PUT
+2025-10-12 18:49:30,414 — INFO — ✅ Orden ejecutada correctamente | ID: 13181495791
+2025-10-12 18:50:35,428 — INFO — 💀 Operación PERDIDA | Pérdida: -1.00
+2025-10-12 18:51:40,440 — DEBUG — 🔍 is_market_open(): verificando con candles
+2025-10-12 18:51:40,674 — INFO — ✅ Se obtuvo al menos una vela. Mercado abierto.
+2025-10-12 18:51:40,958 — DEBUG — [OTC-EVAL] side=SELL score=1.40 reasons=['near_ema200', 'rsi_falling(54.6->53.2)', 'close_below_bb_high', 'weak_body(0.23)'] rsi=53.21 bbw=0.0036 atr=0.001196
+2025-10-12 18:51:40,958 — DEBUG — 🚫 OTC: señal SELL ignorada porque ya es last_signal.
+2025-10-12 18:51:40,958 — DEBUG — 🔍 Sin señal clara. Esperando la próxima actualización...
+2025-10-12 18:52:40,960 — DEBUG — 🔍 is_market_open(): verificando con candles
+2025-10-12 18:52:41,195 — INFO — ✅ Se obtuvo al menos una vela. Mercado abierto.
+2025-10-12 18:52:41,463 — DEBUG — [OTC-EVAL] side=SELL score=2.52 reasons=['below_ema200', 'rsi_falling(54.0->51.1)', 'close_below_bb_high', 'bear_body(0.80)'] rsi=51.11 bbw=0.0035 atr=0.001224
+2025-10-12 18:52:41,464 — DEBUG — 🚫 OTC: señal SELL ignorada porque ya es last_signal.
+2025-10-12 18:52:41,464 — DEBUG — 🔍 Sin señal clara. Esperando la próxima actualización...
+2025-10-12 18:53:41,469 — DEBUG — 🔍 is_market_open(): verificando con candles
+2025-10-12 18:53:41,719 — INFO — ✅ Se obtuvo al menos una vela. Mercado abierto.
+2025-10-12 18:53:42,128 — DEBUG — [OTC-EVAL] side=SELL score=1.70 reasons=['below_ema200', 'close_below_bb_high', 'weak_body(0.38)'] rsi=49.18 bbw=0.0035 atr=0.001214
+2025-10-12 18:53:42,129 — DEBUG — 🚫 OTC: señal SELL ignorada porque ya es last_signal.
+2025-10-12 18:53:42,129 — DEBUG — 🔍 Sin señal clara. Esperando la próxima actualización...
+2025-10-12 18:54:42,145 — DEBUG — 🔍 is_market_open(): verificando con candles
+2025-10-12 18:54:42,394 — INFO — ✅ Se obtuvo al menos una vela. Mercado abierto.
+2025-10-12 18:54:42,684 — DEBUG — [OTC-EVAL] side=SELL score=1.02 reasons=['near_ema200', 'rsi_near(53.4)', 'close_below_bb_high', 'weak_body(0.22)'] rsi=53.40 bbw=0.0033 atr=0.001144
+2025-10-12 18:54:42,685 — DEBUG — 🚫 OTC: señal SELL ignorada porque ya es last_signal.
+2025-10-12 18:54:42,685 — DEBUG — 🔍 Sin señal clara. Esperando la próxima actualización...
+2025-10-12 18:55:42,696 — DEBUG — 🔍 is_market_open(): verificando con candles
+2025-10-12 18:55:43,035 — INFO — ✅ Se obtuvo al menos una vela. Mercado abierto.
+2025-10-12 18:55:43,345 — DEBUG — [OTC-EVAL] side=BUY score=1.30 reasons=['bb_width_ok(0.0033)', 'near_ema200', 'close_above_bb_low', 'bull_body(1.95)'] rsi=56.03 bbw=0.0033 atr=0.001182
+2025-10-12 18:55:43,397 — INFO — ✅ OTC SIGNAL: BUY | score=1.30 | reasons=['bb_width_ok(0.0033)', 'near_ema200', 'close_above_bb_low', 'bull_body(1.95)'] | rsi=56.03
+2025-10-12 18:55:43,399 — INFO — 📊 Señal detectada: BUY → Ejecutando CALL
+2025-10-12 18:55:44,109 — INFO — ✅ Orden ejecutada correctamente | ID: 13181511121
+2025-10-12 18:55:49,895 — INFO — 🛑 Interrupción manual. Cerrando bot...
+2025-10-12 18:55:49,895 — INFO — 📊 Ejecutando análisis de resultados diarios...
+2025-10-12 18:55:50,056 — INFO — ✅ Reporte del día guardado en: reports\resumen_2025-10-12_18-55-50.csv
+2025-10-12 18:55:53,345 — INFO — 🗓️ Iniciando registro en archivo: logs\bot_2025-10-12.log
+2025-10-12 18:55:53,347 — INFO — 🗓️ Iniciando registro en archivo: logs\bot_2025-10-12.log
+2025-10-12 18:55:53,349 — INFO — 🗓️ Iniciando registro en archivo: logs\bot_2025-10-12.log
+2025-10-12 18:55:53,351 — INFO — 🗓️ Iniciando registro en archivo: logs\bot_2025-10-12.log
+2025-10-12 18:55:53,352 — INFO — 🔌 Conectando a IQ Option...
+2025-10-12 18:55:55,922 — INFO — ✅ Conectado correctamente en modo PRACTICE
+2025-10-12 18:55:55,922 — DEBUG — 🔍 is_market_open(): verificando con candles
+2025-10-12 18:55:56,354 — INFO — ✅ Se obtuvo al menos una vela. Mercado abierto.
+2025-10-12 18:55:56,660 — DEBUG — [OTC-EVAL] side=BUY score=1.30 reasons=['bb_width_ok(0.0033)', 'near_ema200', 'close_above_bb_low', 'bull_body(1.36)'] rsi=54.12 bbw=0.0033 atr=0.001182
+2025-10-12 18:55:56,661 — INFO — ✅ OTC SIGNAL: BUY | score=1.30 | reasons=['bb_width_ok(0.0033)', 'near_ema200', 'close_above_bb_low', 'bull_body(1.36)'] | rsi=54.12
+2025-10-12 18:55:56,661 — INFO — 📊 Señal detectada: BUY → Ejecutando CALL
+2025-10-12 18:55:57,654 — INFO — ✅ Orden ejecutada correctamente | ID: 13181511566
+2025-10-12 18:57:08,013 — INFO — 🏆 Operación GANADA | Profit: +0.86
+2025-10-12 18:58:13,025 — DEBUG — 🔍 is_market_open(): verificando con candles
+2025-10-12 18:58:13,275 — INFO — ✅ Se obtuvo al menos una vela. Mercado abierto.
+2025-10-12 18:58:13,568 — DEBUG — [OTC-EVAL] side=SELL score=1.02 reasons=['near_ema200', 'rsi_near(54.2)', 'close_below_bb_high', 'weak_body(0.27)'] rsi=54.16 bbw=0.0033 atr=0.001060
+2025-10-12 18:58:13,569 — INFO — ✅ OTC SIGNAL: SELL | score=1.02 | reasons=['near_ema200', 'rsi_near(54.2)', 'close_below_bb_high', 'weak_body(0.27)'] | rsi=54.16
+2025-10-12 18:58:13,569 — INFO — 📊 Señal detectada: SELL → Ejecutando PUT
+2025-10-12 18:58:14,245 — INFO — ✅ Orden ejecutada correctamente | ID: 13181517706
+2025-10-12 18:59:19,251 — INFO — 💀 Operación PERDIDA | Pérdida: -1.00
+2025-10-12 19:00:24,265 — INFO — 🕒 Hora límite alcanzada. Cerrando sesión de trading...
+2025-10-12 19:00:24,265 — INFO — 📊 Ejecutando análisis de resultados diarios...
+2025-10-12 19:00:24,440 — INFO — ✅ Reporte guardado en: reports\resumen_2025-10-12_19-00-24.csv
+2025-10-12 19:03:57,635 — INFO — 🗓️ Iniciando registro en archivo: logs\bot_2025-10-12.log
+2025-10-12 19:03:57,639 — INFO — 🗓️ Iniciando registro en archivo: logs\bot_2025-10-12.log
+2025-10-12 19:03:57,641 — INFO — 🗓️ Iniciando registro en archivo: logs\bot_2025-10-12.log
+2025-10-12 19:03:57,644 — INFO — 🗓️ Iniciando registro en archivo: logs\bot_2025-10-12.log
+2025-10-12 19:03:57,645 — INFO — 🔌 Conectando a IQ Option...
+2025-10-12 19:04:00,319 — INFO — ✅ Conectado correctamente en modo PRACTICE
+2025-10-12 19:04:00,319 — INFO — 🕒 Hora límite alcanzada. Cerrando sesión de trading...
+2025-10-12 19:04:00,319 — INFO — 📊 Ejecutando análisis de resultados diarios...
+2025-10-12 19:04:00,491 — WARNING — ⚠️ No se encontró archivo de operaciones para generar reporte.
+2025-10-12 19:04:19,430 — INFO — 🗓️ Iniciando registro en archivo: logs\bot_2025-10-12.log
+2025-10-12 19:04:19,432 — INFO — 🗓️ Iniciando registro en archivo: logs\bot_2025-10-12.log
+2025-10-12 19:04:19,435 — INFO — 🗓️ Iniciando registro en archivo: logs\bot_2025-10-12.log
+2025-10-12 19:04:19,437 — INFO — 🗓️ Iniciando registro en archivo: logs\bot_2025-10-12.log
+2025-10-12 19:04:19,438 — INFO — 🔌 Conectando a IQ Option...
+2025-10-12 19:04:21,916 — INFO — ✅ Conectado correctamente en modo PRACTICE
+2025-10-12 19:04:21,916 — INFO — 🕒 Hora límite alcanzada. Cerrando sesión de trading...
+2025-10-12 19:04:21,917 — INFO — 📊 Ejecutando análisis de resultados diarios...
+2025-10-12 19:04:22,081 — WARNING — ⚠️ No se encontró archivo de operaciones para generar reporte.
+2025-10-12 19:06:16,325 — INFO — 🗓️ Iniciando registro en archivo: logs\bot_2025-10-12.log
+2025-10-12 19:06:16,327 — INFO — 🗓️ Iniciando registro en archivo: logs\bot_2025-10-12.log
+2025-10-12 19:06:16,330 — INFO — 🗓️ Iniciando registro en archivo: logs\bot_2025-10-12.log
+2025-10-12 19:06:16,331 — INFO — 🗓️ Iniciando registro en archivo: logs\bot_2025-10-12.log
+2025-10-12 19:06:16,332 — INFO — 🔌 Conectando a IQ Option...
+2025-10-12 19:06:18,484 — INFO — ✅ Conectado correctamente en modo PRACTICE
+2025-10-12 19:06:18,485 — INFO — 🕒 Hora límite alcanzada. Cerrando sesión de trading...
+2025-10-12 19:06:18,485 — INFO — 📊 Ejecutando análisis de resultados diarios...
+2025-10-12 19:06:18,640 — WARNING — ⚠️ No se encontró archivo de operaciones para generar reporte.
+2025-10-12 19:06:45,409 — INFO — 🗓️ Iniciando registro en archivo: logs\bot_2025-10-12.log
+2025-10-12 19:06:45,438 — INFO — 🗓️ Iniciando registro en archivo: logs\bot_2025-10-12.log
+2025-10-12 19:06:45,458 — INFO — 🗓️ Iniciando registro en archivo: logs\bot_2025-10-12.log
+2025-10-12 19:06:45,460 — INFO — 🗓️ Iniciando registro en archivo: logs\bot_2025-10-12.log
+2025-10-12 19:06:45,461 — INFO — 🔌 Conectando a IQ Option...
