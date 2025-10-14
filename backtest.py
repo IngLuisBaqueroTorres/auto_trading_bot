@@ -6,7 +6,6 @@ from iqoptionapi.stable_api import IQ_Option
 
 # --- Configuración del Backtest ---
 from config import EMAIL, PASSWORD, PAIR
-from strategies.bb_rsi_strategy import bb_rsi_strategy, add_indicators  # ✅ Estrategia Pro v2
 
 CANDLE_DURATION = 60
 NUM_CANDLES = 1000
@@ -53,11 +52,12 @@ def run_backtest(strategy_func, df_with_indicators):
     df = df_with_indicators.dropna().copy()
     last_signal = None  # ✅ Evita señales duplicadas consecutivas
 
-    for i in range(201, len(df)):
+    # Empezamos desde un índice seguro para tener suficientes datos previos
+    for i in range(60, len(df)):
         subset = df.iloc[:i]
-        signal = strategy_func(subset, last_signal)
-
         current_candle_time = df.index[i - 1]
+        signal = strategy_func(subset, last_signal, current_hour=current_candle_time.hour)
+
 
         if signal:
             entry_price = df['close'].iloc[i - 1]
@@ -94,7 +94,7 @@ def plot_results(df, signals, strategy_name):
         elif s['signal'] == 'SELL':
             df.loc[s['time'], 'sell_signal'] = s['price'] * 1.01
 
-    df_plot = df.iloc[200:].copy()
+    df_plot = df.iloc[59:].copy()
 
     # --- Indicadores principales ---
     add_plots = []
@@ -102,6 +102,8 @@ def plot_results(df, signals, strategy_name):
         add_plots.append(mpf.make_addplot(df_plot[['bb_high', 'bb_low']], alpha=0.4))
     if 'ema200' in df_plot.columns:
         add_plots.append(mpf.make_addplot(df_plot['ema200'], color='purple', width=1.0))
+    if 'ema20' in df_plot.columns:
+        add_plots.append(mpf.make_addplot(df_plot['ema20'], color='orange', width=0.7))
 
     # --- Añadir señales si existen ---
     if not df_plot['buy_signal'].isnull().all():
@@ -127,6 +129,21 @@ def plot_results(df, signals, strategy_name):
 
 
 if __name__ == "__main__":
+    # --- SELECCIÓN DE ESTRATEGIA ---
+    print("\n=== SELECCIONA LA ESTRATEGIA PARA EL BACKTEST ===")
+    print("1) Estrategia OTC")
+    print("2) Estrategia Normal")
+    choice = input("Opción (1/2): ").strip()
+
+    if choice == "1":
+        from strategies.bb_rsi_otc import bb_rsi_otc_trend as selected_strategy, add_indicators
+        strategy_name = "OTC Trend"
+    else:  # Por defecto o si la opción es 2
+        from strategies.bb_rsi_normal_trend import bb_rsi_normal_trend as selected_strategy, add_indicators
+        strategy_name = "Normal Trend"
+
+    print(f"\nUsando estrategia: {strategy_name}")
+
     print("Conectando a IQ Option...")
     API = IQ_Option(EMAIL, PASSWORD)
     API.connect()
@@ -140,18 +157,17 @@ if __name__ == "__main__":
     df_with_indicators = add_indicators(historical_df.copy())
 
     print("Ejecutando backtest...")
-    signals, wins, losses = run_backtest(bb_rsi_strategy, df_with_indicators)
+    signals, wins, losses = run_backtest(selected_strategy, df_with_indicators)
 
     total_trades = wins + losses
     win_rate = (wins / total_trades * 100) if total_trades > 0 else 0
 
     print("\n--- 📊 Resultados del Backtest ---")
-    print(f"Estrategia: {bb_rsi_strategy.__name__}")
+    print(f"Estrategia: {strategy_name}")
     print(f"Total de Operaciones: {total_trades}")
     print(f"Aciertos (Wins): {wins}")
     print(f"Fallos (Losses): {losses}")
     print(f"Tasa de Éxito: {win_rate:.2f}%")
     print("----------------------------------")
 
-    # 🔹 Siempre grafica, incluso si no hay señales
-    plot_results(df_with_indicators, signals, bb_rsi_strategy.__name__)
+    plot_results(df_with_indicators, signals, strategy_name)

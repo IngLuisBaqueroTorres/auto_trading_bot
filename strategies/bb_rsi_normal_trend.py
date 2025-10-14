@@ -6,13 +6,26 @@ from utils.logger import setup_logger
 logger = setup_logger()
 
 # ----------------- PARÁMETROS -----------------
-RSI_NEAR_BUY = 52        # más conservador que OTC
-RSI_NEAR_SELL = 48
-MIN_SCORE_TO_ENTER = 0.65  # más alto que en OTC
-EMA_NEUTRAL_MARGIN_PCT = 0.0015
-MIN_BB_WIDTH = 0.0025
+# --- Umbrales y Filtros ---
+MIN_SCORE_TO_ENTER = 1.1  # Aumentamos el umbral para exigir señales de mayor calidad.
+EMA_NEUTRAL_MARGIN_PCT = 0.001
+MIN_BB_WIDTH = 0.0022 # Relajamos un poco para permitir más operaciones en mercados menos volátiles.
 TRADING_START_HOUR = 6
 TRADING_END_HOUR = 18
+
+# --- Pesos del Score ---
+SCORE_PULLBACK_ENTRY = 1.2  # ✅ NUEVO: Señal de alta probabilidad, le damos el mayor peso.
+SCORE_TREND_MOMENTUM = 0.8  # Reducimos ligeramente el peso de la condición general.
+SCORE_RSI_ZONE = 0.4
+SCORE_BB_CONFIRMATION = 0.3
+SCORE_BODY_CONFIRMATION = 0.2 
+
+# --- Umbrales de Indicadores ---
+BODY_RATIO_THRESHOLD = 0.35 # Relajamos un poco para no ser tan estrictos con el tamaño de la vela.
+RSI_PULLBACK_BUY = 48       # ✅ NUEVO: Nivel de RSI para detectar fin de retroceso alcista.
+RSI_PULLBACK_SELL = 52      # ✅ NUEVO: Nivel de RSI para detectar fin de rebote bajista.
+RSI_BULL_ZONE = 50
+RSI_BEAR_ZONE = 50
 
 def add_indicators(df: pd.DataFrame) -> pd.DataFrame:
     df = df.copy()
@@ -24,6 +37,8 @@ def add_indicators(df: pd.DataFrame) -> pd.DataFrame:
         df['bb_low'] = bb_low
     if 'ema200' not in df.columns:
         df['ema200'] = calculate_ema(df['close'], window=200)
+    if 'ema20' not in df.columns: # Añadimos EMA20 para la confirmación de Bollinger
+        df['ema20'] = calculate_ema(df['close'], window=20)
     if 'atr' not in df.columns:
         df['atr'] = calculate_atr(df, window=14)
 
@@ -69,37 +84,46 @@ def bb_rsi_normal_trend(df: pd.DataFrame, last_signal: Optional[str] = None, cur
     score_sell = 0.0
     reasons_buy, reasons_sell = [], []
 
-    # Tendencia principal
+    # --- Condición 1: Entrada por Retroceso (Pullback) - ALTA PROBABILIDAD ---
+    rsi_cross_up_pullback = prev['rsi'] < RSI_PULLBACK_BUY and last['rsi'] >= RSI_PULLBACK_BUY
+    if bullish_trend and rsi_cross_up_pullback:
+        score_buy += SCORE_PULLBACK_ENTRY
+        reasons_buy.append(f"pullback_buy(rsi_cross_{RSI_PULLBACK_BUY})")
+
+    rsi_cross_down_pullback = prev['rsi'] > RSI_PULLBACK_SELL and last['rsi'] <= RSI_PULLBACK_SELL
+    if bearish_trend and rsi_cross_down_pullback:
+        score_sell += SCORE_PULLBACK_ENTRY
+        reasons_sell.append(f"pullback_sell(rsi_cross_{RSI_PULLBACK_SELL})")
+
+    # --- Condición 2: Continuación de Tendencia y Momentum ---
     if bullish_trend and rsi_up:
-        score_buy += 1.0
-        reasons_buy.append("trend_up + rsi_up")
+        score_buy += SCORE_TREND_MOMENTUM
     if bearish_trend and rsi_down:
-        score_sell += 1.0
-        reasons_sell.append("trend_down + rsi_down")
+        score_sell += SCORE_TREND_MOMENTUM
 
-    # RSI relajado (pero más estricto que OTC)
-    if last['rsi'] <= RSI_NEAR_BUY:
-        score_buy += 0.5
-        reasons_buy.append(f"rsi_near_buy({last['rsi']:.1f})")
-    if last['rsi'] >= RSI_NEAR_SELL:
-        score_sell += 0.5
-        reasons_sell.append(f"rsi_near_sell({last['rsi']:.1f})")
+    # Confirmación de zona RSI (Lógica mejorada)
+    if last['rsi'] > RSI_BULL_ZONE:
+        score_buy += SCORE_RSI_ZONE
+        reasons_buy.append(f"rsi_in_bull_zone({last['rsi']:.1f})")
+    if last['rsi'] < RSI_BEAR_ZONE:
+        score_sell += SCORE_RSI_ZONE
+        reasons_sell.append(f"rsi_in_bear_zone({last['rsi']:.1f})")
 
-    # Confirmación Bollinger
-    if last['close'] >= last['bb_low']:
-        score_buy += 0.3
-        reasons_buy.append("close_above_bb_low")
-    if last['close'] <= last['bb_high']:
-        score_sell += 0.3
-        reasons_sell.append("close_below_bb_high")
+    # Confirmación Bollinger (Lógica mejorada usando EMA20)
+    if last['close'] > last['ema20']:
+        score_buy += SCORE_BB_CONFIRMATION
+        reasons_buy.append("close_above_ema20")
+    if last['close'] < last['ema20']:
+        score_sell += SCORE_BB_CONFIRMATION
+        reasons_sell.append("close_below_ema20")
 
     # Tamaño de vela
     body_ratio = last['body'] / (last['avg_body'] + 1e-12)
-    if last['close'] > last['open'] and body_ratio >= 0.5:
-        score_buy += 0.2
+    if last['close'] > last['open'] and body_ratio >= BODY_RATIO_THRESHOLD:
+        score_buy += SCORE_BODY_CONFIRMATION
         reasons_buy.append(f"bull_body({body_ratio:.2f})")
-    elif last['close'] < last['open'] and body_ratio >= 0.5:
-        score_sell += 0.2
+    elif last['close'] < last['open'] and body_ratio >= BODY_RATIO_THRESHOLD:
+        score_sell += SCORE_BODY_CONFIRMATION
         reasons_sell.append(f"bear_body({body_ratio:.2f})")
 
     # ----------- Decisión ----------
