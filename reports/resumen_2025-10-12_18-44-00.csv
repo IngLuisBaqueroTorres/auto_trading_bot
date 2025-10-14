@@ -1,4 +1,0 @@
-timestamp,pair,direction,amount,result,profit
-2025-10-12 18:06:17,EURUSD-OTC,put,1,lose,-1
-2025-10-12 18:17:33,EURUSD-OTC,call,1,lose,-1
-2025-10-12 18:23:07,EURUSD-OTC,put,1,win,0.86
