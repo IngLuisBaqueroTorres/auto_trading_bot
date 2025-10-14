@@ -91,7 +91,16 @@ try:
             logger.info(f"📊 Señal detectada: {signal_res} → Ejecutando {direction.upper()}")
 
             try:
-                status, order_id = API.buy(AMOUNT, PAIR, direction, DURATION)
+                # Dirección adaptada para IQ Option Digital
+                direction_api = "call" if direction.upper() == "BUY" else "put"
+    
+                # ✅ 1) Intentar en Digital (Blitz)
+                status, order_id = API.buy_digital_spot(PAIR, AMOUNT, direction_api, DURATION)
+
+                # ✅ 2) Si Digital falla, intentar en Binarias
+                if not status:
+                    status, order_id = API.buy(AMOUNT, PAIR, direction.upper(), DURATION)
+
                 if status:
                     last_signal = signal_res
                     last_order_time = current_time
@@ -106,7 +115,7 @@ try:
                     else:
                         logger.warning(f"⚠️ Resultado neutro | Profit: {profit:.2f}")
                 else:
-                    logger.warning("❌ Falló la ejecución de la orden")
+                    logger.warning("❌ Falló la ejecución de la orden incluso después del intento doble")
 
             except Exception as e:
                 logger.error(f"⚠️ Error al ejecutar orden: {e}")

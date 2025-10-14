@@ -7,21 +7,21 @@ logger = setup_logger()
 
 # ----------------- PARÁMETROS -----------------
 # --- Umbrales y Filtros ---
-MIN_SCORE_TO_ENTER = 1.1  # Aumentamos el umbral para exigir señales de mayor calidad.
+MIN_SCORE_TO_ENTER = 1.0  # Aumentamos el umbral para exigir señales de mayor calidad.
 EMA_NEUTRAL_MARGIN_PCT = 0.001
-MIN_BB_WIDTH = 0.0022 # Relajamos un poco para permitir más operaciones en mercados menos volátiles.
+MIN_BB_WIDTH = 0.0020 # Relajamos un poco para permitir más operaciones en mercados menos volátiles.
 TRADING_START_HOUR = 6
-TRADING_END_HOUR = 18
+TRADING_END_HOUR = 20
 
 # --- Pesos del Score ---
-SCORE_PULLBACK_ENTRY = 1.2  # ✅ NUEVO: Señal de alta probabilidad, le damos el mayor peso.
+SCORE_PULLBACK_ENTRY = 1.3  # ✅ NUEVO: Señal de alta probabilidad, le damos el mayor peso.
 SCORE_TREND_MOMENTUM = 0.8  # Reducimos ligeramente el peso de la condición general.
 SCORE_RSI_ZONE = 0.4
 SCORE_BB_CONFIRMATION = 0.3
 SCORE_BODY_CONFIRMATION = 0.2 
 
 # --- Umbrales de Indicadores ---
-BODY_RATIO_THRESHOLD = 0.35 # Relajamos un poco para no ser tan estrictos con el tamaño de la vela.
+BODY_RATIO_THRESHOLD = 0.30 # Relajamos un poco para no ser tan estrictos con el tamaño de la vela.
 RSI_PULLBACK_BUY = 48       # ✅ NUEVO: Nivel de RSI para detectar fin de retroceso alcista.
 RSI_PULLBACK_SELL = 52      # ✅ NUEVO: Nivel de RSI para detectar fin de rebote bajista.
 RSI_BULL_ZONE = 50
