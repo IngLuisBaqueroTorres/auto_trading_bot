@@ -23,23 +23,22 @@ def analyze_results():
 
     print(f"📊 Analizando resultados desde: {log_path}")
 
-    total_trades = 0
     wins = 0
     losses = 0
 
     try:
         with open(log_path, "r", encoding="utf-8") as file:
             for line in file:
-                if "Orden ejecutada" in line:
-                    total_trades += 1
-                elif "WIN" in line or "✅ Ganancia" in line:
+                # Buscamos los textos correctos que genera main.py
+                if "Operación GANADA" in line:
                     wins += 1
-                elif "LOSS" in line or "❌ Pérdida" in line:
+                elif "Operación PERDIDA" in line:
                     losses += 1
     except Exception as e:
         print(f"⚠️ Error analizando resultados: {e}")
         return
 
+    total_trades = wins + losses
     win_rate = (wins / total_trades * 100) if total_trades > 0 else 0
 
     print(f"""
