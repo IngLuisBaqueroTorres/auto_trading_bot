@@ -124,7 +124,10 @@ def plot_results(df, signals, strategy_name):
         title=f'Backtest de la Estrategia: {strategy_name} en {PAIR}',
         ylabel='Precio',
         addplot=add_plots,
-        figsize=(15, 7)
+        figsize=(15, 7),
+        datetime_format='%Y-%m-%d %H:%M',  # Formato explícito para fecha y hora
+        xrotation=45,                     # Rota las etiquetas para que no se solapen
+        show_nontrading=False             # Oculta los huecos de tiempo sin datos (fines de semana)
     )
 
 

@@ -93,13 +93,8 @@ try:
             try:
                 # Dirección adaptada para IQ Option Digital
                 direction_api = "call" if direction.upper() == "BUY" else "put"
-    
-                # ✅ 1) Intentar en Digital (Blitz)
-                status, order_id = API.buy_digital_spot(PAIR, AMOUNT, direction_api, DURATION)
-
-                # ✅ 2) Si Digital falla, intentar en Binarias
-                if not status:
-                    status, order_id = API.buy(AMOUNT, PAIR, direction.upper(), DURATION)
+              
+                status, order_id = API.buy(AMOUNT, PAIR, direction.upper(), DURATION)
 
                 if status:
                     last_signal = signal_res
