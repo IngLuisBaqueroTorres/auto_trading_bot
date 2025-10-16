@@ -14,13 +14,17 @@ from utils.logger import setup_logger
 
 # ✅ MENÚ DE SELECCIÓN DE ESTRATEGIA
 print("\n=== SELECCIONA LA ESTRATEGIA A USAR ===")
-print("1) Estrategia OTC")
-print("2) Estrategia Normal")
-choice = input("Opción (1/2): ").strip()
+print("1) Estrategia OTC1")
+print("2) Estrategia OTC2")
+print("3) Estrategia Normal")
+choice = input("Opción : ").strip()
 
 if choice == "1":
     from strategies.bb_rsi_otc import bb_rsi_otc_trend as selected_strategy
-    strategy_name = "OTC"
+    strategy_name = "OTC1"
+elif choice == "2":
+    from strategies.bb_rsi_otc_2 import bb_rsi_otc_trend as selected_strategy
+    strategy_name = "OTC2"
 else:
     from strategies.bb_rsi_normal_trend import bb_rsi_normal_trend as selected_strategy
     strategy_name = "Normal"
@@ -45,6 +49,18 @@ if not API.check_connect():
 API.change_balance(BALANCE_MODE)
 logger.info(f"✅ Conectado en modo {BALANCE_MODE}")
 
+# ✅ Capturar saldo inicial y definir stop win/loss
+initial_balance = API.get_balance()
+STOP_WIN = 1   # en dólares
+STOP_LOSS = 10  # en dólares
+
+target_win = initial_balance + STOP_WIN
+target_loss = initial_balance - STOP_LOSS
+
+logger.info(f"💰 Saldo inicial: {initial_balance}")
+logger.info(f"🎯 Stop Win en: {target_win}")
+logger.info(f"🛑 Stop Loss en: {target_loss}")
+
 last_signal = None
 last_order_time = 0
 
@@ -52,6 +68,15 @@ try:
     while True:
         now = datetime.now()
         current_hour = now.hour
+
+        # ✅ Validación de stop win/stop loss
+        current_balance = API.get_balance()
+        if current_balance >= target_win:
+            logger.info(f"🏁 Stop Win alcanzado ({current_balance} >= {target_win}). Cerrando bot...")
+            break
+        if current_balance <= target_loss:
+            logger.info(f"🏳️ Stop Loss alcanzado ({current_balance} <= {target_loss}). Cerrando bot...")
+            break
 
         if current_hour >= END_HOUR:
             logger.info("🕒 Hora límite alcanzada. Cerrando bot...")
@@ -68,7 +93,6 @@ try:
             time.sleep(30)
             continue
 
-        # Indicadores se calculan dentro de la estrategia si no los tiene
         df = df.copy()
 
         # ✅ Evaluar estrategia seleccionada
@@ -91,9 +115,7 @@ try:
             logger.info(f"📊 Señal detectada: {signal_res} → Ejecutando {direction.upper()}")
 
             try:
-                # Dirección adaptada para IQ Option Digital
                 direction_api = "call" if direction.upper() == "BUY" else "put"
-              
                 status, order_id = API.buy(AMOUNT, PAIR, direction.upper(), DURATION)
 
                 if status:
