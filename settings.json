@@ -1,0 +1,7 @@
+{
+    "PAIR": "EURUSD-OTC",
+    "AMOUNT": 1.0,
+    "DURATION": 1,
+    "STOP_WIN": 1.0,
+    "STOP_LOSS": 5.0
+}

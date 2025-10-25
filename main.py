@@ -1,25 +1,34 @@
-# main_debug.py
 from iqoptionapi.stable_api import IQ_Option
 import time
-import pandas as pd
 from datetime import datetime
 import os
 import subprocess
+import sys
+import importlib
+from dotenv import load_dotenv
 
-from config import (
-    EMAIL, PASSWORD, BALANCE_MODE, PAIR,
-    AMOUNT, DURATION, CANDLE_DURATION, NUM_CANDLES
-)
 from utils.helpers import get_candle_dataframe, is_market_open, signal_to_direction
 from utils.logger import setup_logger
-from utils.strategy_selector import select_strategy
-from utils.config_manager import restore_last_config
+from utils.config_manager import get_settings, restore_last_config
+from utils.strategy_selector import AVAILABLE_STRATEGIES
 from utils.trade_logger import log_trade
 
-# ✅ Seleccionar estrategia usando el menú centralizado
-selected_strategy, strategy_name = select_strategy()
-if not selected_strategy:
-    exit("No se seleccionó una estrategia válida. Saliendo.")
+# --- Cargar configuración ---
+load_dotenv()
+settings = get_settings()
+EMAIL = os.getenv("EMAIL")
+PASSWORD = os.getenv("PASSWORD")
+
+if len(sys.argv) < 2:
+    print("Error: Debes proporcionar la clave de la estrategia a ejecutar.")
+    print("Uso: python main.py <strategy_key>")
+    exit()
+
+strategy_key = sys.argv[1]
+strategy_info = AVAILABLE_STRATEGIES.get(strategy_key)
+module = importlib.import_module(strategy_info["module"])
+selected_strategy = getattr(module, strategy_info["function"])
+strategy_name = strategy_info["name"]
 
 # ✅ Logger
 logger = setup_logger()
@@ -33,18 +42,23 @@ os.makedirs(REPORT_DIR, exist_ok=True)
 # --- Conexión ---
 logger.info("🔌 Conectando a IQ Option...")
 API = IQ_Option(EMAIL, PASSWORD)
-API.connect()
-if not API.check_connect():
-    logger.error("❌ No se pudo conectar a IQ Option.")
+try:
+    API.connect()
+except Exception as e:
+    logger.error(f"❌ Falló la conexión inicial a IQ Option. Causa probable: Problema de red o credenciales incorrectas.")
+    logger.error(f"   Error original: {e}")
     exit()
-API.change_balance(BALANCE_MODE)
-logger.info(f"✅ Conectado en modo {BALANCE_MODE}")
+
+if not API.check_connect():
+    logger.error("❌ No se pudo verificar la conexión a IQ Option. Revisa tus credenciales y conexión a internet.")
+    exit()
+API.change_balance(settings['BALANCE_MODE'])
+logger.info(f"✅ Conectado en modo {settings['BALANCE_MODE']}")
 
 # ✅ Capturar saldo inicial y definir stop win/loss
 initial_balance = API.get_balance()
-STOP_WIN = 1   # en dólares
-STOP_LOSS = 10  # en dólares
-
+STOP_WIN = settings.get('STOP_WIN', 10)
+STOP_LOSS = settings.get('STOP_LOSS', 10)
 target_win = initial_balance + STOP_WIN
 target_loss = initial_balance - STOP_LOSS
 
@@ -53,6 +67,13 @@ logger.info(f"🎯 Stop Win en: {target_win}")
 logger.info(f"🛑 Stop Loss en: {target_loss}")
 
 last_signal = None
+
+# Extraer variables de settings
+PAIR = settings.get('PAIR')
+AMOUNT = settings.get('AMOUNT')
+DURATION = settings.get('DURATION')
+CANDLE_DURATION = settings.get('CANDLE_DURATION')
+NUM_CANDLES = settings.get('NUM_CANDLES')
 last_order_time = 0
 
 try:
@@ -78,7 +99,7 @@ try:
             time.sleep(60)
             continue
 
-        df = get_candle_dataframe(API, PAIR, CANDLE_DURATION, NUM_CANDLES)
+        df = get_candle_dataframe(API, PAIR, CANDLE_DURATION, NUM_CANDLES) # Usa variables de settings
         if df is None or df.empty:
             logger.warning("⚠️ No se recibieron datos de velas. Reintentando en 30s...")
             time.sleep(30)
@@ -94,7 +115,7 @@ try:
             signal_res = None
 
         if signal_res:
-            direction = signal_to_direction(signal_res)
+            direction = signal_res.get("direction")
             current_time = time.time()
 
             # Evitar spam de entradas repetidas
@@ -103,11 +124,10 @@ try:
                 time.sleep(CANDLE_DURATION)
                 continue
 
-            logger.info(f"📊 Señal detectada: {signal_res} → Ejecutando {direction.upper()}")
+            logger.info(f"📊 Señal detectada: {direction.upper()}")
 
             try:
-                direction_api = "call" if direction.upper() == "BUY" else "put"
-                status, order_id = API.buy(AMOUNT, PAIR, direction.upper(), DURATION)
+                status, order_id = API.buy(AMOUNT, PAIR, direction, DURATION)
 
                 if status:
                     last_signal = signal_res

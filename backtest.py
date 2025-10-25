@@ -3,13 +3,18 @@ import mplfinance as mpf
 import os
 import time
 from iqoptionapi.stable_api import IQ_Option
+from dotenv import load_dotenv
 import importlib
+import sys
 
-# --- Configuración del Backtest ---
-from config import EMAIL, PASSWORD, PAIR
-from utils.strategy_selector import select_strategy
- 
-CANDLE_DURATION = 60
+# --- Cargar configuración ---
+load_dotenv()
+from utils.config_manager import get_settings
+settings = get_settings()
+EMAIL = os.getenv("EMAIL")
+PASSWORD = os.getenv("PASSWORD")
+PAIR = settings.get("PAIR")
+CANDLE_DURATION = settings.get("CANDLE_DURATION")
 NUM_CANDLES = 1000
 FORCE_DOWNLOAD = False # ✅ Poner en True para forzar la descarga de nuevos datos
 
@@ -61,11 +66,15 @@ def run_backtest(strategy_func, df_with_indicators):
     # Iteramos hasta la penúltima vela, ya que necesitamos la siguiente para determinar el resultado.
     for i in range(60, len(df) - 1):
         # La estrategia analiza los datos HASTA la vela 'i' (inclusive)
-        subset = df.iloc[:i+1]
+        subset = df.iloc[:i+1].copy()
         current_candle_time = df.index[i]
         signal = strategy_func(subset, last_signal, current_hour=current_candle_time.hour)
 
         if signal:
+            direction = signal.get("direction")
+            if not direction:
+                continue
+
             entry_price = df['close'].iloc[i]
             outcome_price = df['close'].iloc[i + 1] # El resultado se ve en la vela siguiente
 
@@ -80,10 +89,10 @@ def run_backtest(strategy_func, df_with_indicators):
 
             signals.append({
                 'time': current_candle_time,
-                'signal': signal,
+                'signal': direction.upper(),
                 'price': entry_price
             })
-            last_signal = signal  # ✅ Actualiza el último tipo de señal
+            last_signal = direction  # ✅ Actualiza el último tipo de señal
 
     return signals, wins, losses
 
@@ -138,25 +147,37 @@ def plot_results(df, signals, strategy_name):
 
 
 if __name__ == "__main__":
-    # --- SELECCIÓN DE ESTRATEGIA ---
-    selected_strategy, strategy_name = select_strategy()
-    if not selected_strategy:
-        exit("No se seleccionó una estrategia válida. Saliendo.")
+    from utils.strategy_selector import AVAILABLE_STRATEGIES
+    
+    if len(sys.argv) < 2:
+        print("Error: Debes proporcionar la clave de la estrategia para el backtest.")
+        print("Uso: python backtest.py <strategy_key>")
+        exit()
+
+    strategy_key = sys.argv[1]
+    strategy_info = AVAILABLE_STRATEGIES.get(strategy_key)
+    strategy_module_path = strategy_info["module"]
+    strategy_name = strategy_info["name"]
     
     print(f"\nUsando estrategia: {strategy_name}")
     
     # Importar dinámicamente la función add_indicators del módulo de la estrategia
-    strategy_module_path = selected_strategy.__module__
-    strategy_module = importlib.import_module(strategy_module_path)
+    strategy_module = importlib.import_module(strategy_info["module"])
     add_indicators = getattr(strategy_module, 'add_indicators')
+    selected_strategy = getattr(strategy_module, strategy_info["function"])
     
     print("Conectando a IQ Option...")
     API = IQ_Option(EMAIL, PASSWORD)
-    API.connect()
+    try:
+        API.connect()
+    except Exception as e:
+        print(f"❌ Falló la conexión inicial a IQ Option. Causa probable: Problema de red o credenciales incorrectas.")
+        print(f"   Error original: {e}")
+        exit()
 
     if not API.check_connect():
-        raise ConnectionError("❌ No se pudo conectar a IQ Option. Verifica tus credenciales o conexión.")
-
+        print("❌ No se pudo verificar la conexión a IQ Option. Revisa tus credenciales y conexión a internet.")
+        exit()
     historical_df = fetch_historical_data(API, PAIR, CANDLE_DURATION, NUM_CANDLES)
 
     print("Calculando indicadores...")
