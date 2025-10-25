@@ -3,22 +3,25 @@ import mplfinance as mpf
 import os
 import time
 from iqoptionapi.stable_api import IQ_Option
+import importlib
 
 # --- Configuración del Backtest ---
 from config import EMAIL, PASSWORD, PAIR
-
+from utils.strategy_selector import select_strategy
+ 
 CANDLE_DURATION = 60
 NUM_CANDLES = 1000
+FORCE_DOWNLOAD = False # ✅ Poner en True para forzar la descarga de nuevos datos
 
 
 def fetch_historical_data(api, pair, duration, num_candles):
     """Obtiene datos históricos y los guarda en un CSV para reutilizarlos."""
     data_dir = "historical_data"
     os.makedirs(data_dir, exist_ok=True)
-
+ 
     file_path = os.path.join(data_dir, f"{pair}_{duration}s_{num_candles}c.csv")
 
-    if os.path.exists(file_path):
+    if os.path.exists(file_path) and not FORCE_DOWNLOAD:
         print(f"Cargando datos desde {file_path}...")
         df = pd.read_csv(file_path, index_col='time', parse_dates=True)
         return df
@@ -49,19 +52,22 @@ def run_backtest(strategy_func, df_with_indicators):
     wins = 0
     losses = 0
 
-    df = df_with_indicators.dropna().copy()
+    # The add_indicators function for each strategy is now responsible for handling NaNs.
+    # This ensures the main dataframe remains consistent for comparison.
+    df = df_with_indicators.copy()
     last_signal = None  # ✅ Evita señales duplicadas consecutivas
 
     # Empezamos desde un índice seguro para tener suficientes datos previos
-    for i in range(60, len(df)):
-        subset = df.iloc[:i]
-        current_candle_time = df.index[i - 1]
+    # Iteramos hasta la penúltima vela, ya que necesitamos la siguiente para determinar el resultado.
+    for i in range(60, len(df) - 1):
+        # La estrategia analiza los datos HASTA la vela 'i' (inclusive)
+        subset = df.iloc[:i+1]
+        current_candle_time = df.index[i]
         signal = strategy_func(subset, last_signal, current_hour=current_candle_time.hour)
 
-
         if signal:
-            entry_price = df['close'].iloc[i - 1]
-            outcome_price = df['close'].iloc[i]
+            entry_price = df['close'].iloc[i]
+            outcome_price = df['close'].iloc[i + 1] # El resultado se ve en la vela siguiente
 
             # Resultado simple basado en la vela siguiente
             is_win = (signal == "BUY" and outcome_price > entry_price) or \
@@ -133,20 +139,17 @@ def plot_results(df, signals, strategy_name):
 
 if __name__ == "__main__":
     # --- SELECCIÓN DE ESTRATEGIA ---
-    print("\n=== SELECCIONA LA ESTRATEGIA PARA EL BACKTEST ===")
-    print("1) Estrategia OTC")
-    print("2) Estrategia Normal")
-    choice = input("Opción (1/2): ").strip()
-
-    if choice == "1":
-        from strategies.bb_rsi_otc import bb_rsi_otc_trend as selected_strategy, add_indicators
-        strategy_name = "OTC Trend"
-    else:  # Por defecto o si la opción es 2
-        from strategies.bb_rsi_normal_trend import bb_rsi_normal_trend as selected_strategy, add_indicators
-        strategy_name = "Normal Trend"
-
+    selected_strategy, strategy_name = select_strategy()
+    if not selected_strategy:
+        exit("No se seleccionó una estrategia válida. Saliendo.")
+    
     print(f"\nUsando estrategia: {strategy_name}")
-
+    
+    # Importar dinámicamente la función add_indicators del módulo de la estrategia
+    strategy_module_path = selected_strategy.__module__
+    strategy_module = importlib.import_module(strategy_module_path)
+    add_indicators = getattr(strategy_module, 'add_indicators')
+    
     print("Conectando a IQ Option...")
     API = IQ_Option(EMAIL, PASSWORD)
     API.connect()

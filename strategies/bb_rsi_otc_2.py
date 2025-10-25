@@ -48,7 +48,7 @@ def add_indicators(df: pd.DataFrame) -> pd.DataFrame:
         df['atr'] = calculate_atr(df, window=14)
     df['body'] = (df['close'] - df['open']).abs()
     df['avg_body'] = df['body'].rolling(20, min_periods=1).mean()
-    return df
+    return df.dropna()
 
 def _price_within_edge_of_bb(last_close: float, bb_low: float, bb_high: float, edge_pct: float) -> Dict[str, bool]:
     width = bb_high - bb_low
@@ -69,7 +69,7 @@ def bb_rsi_otc_trend(
     trades_in_last_hour: int = 0
 ) -> Optional[str]:
 
-    df = add_indicators(df).dropna()
+    df = add_indicators(df) # dropna() is now inside add_indicators
     if len(df) < 60:
         return None
 

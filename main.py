@@ -11,30 +11,18 @@ from config import (
 )
 from utils.helpers import get_candle_dataframe, is_market_open, signal_to_direction
 from utils.logger import setup_logger
+from utils.strategy_selector import select_strategy
 
-# ✅ MENÚ DE SELECCIÓN DE ESTRATEGIA
-print("\n=== SELECCIONA LA ESTRATEGIA A USAR ===")
-print("1) Estrategia OTC1")
-print("2) Estrategia OTC2")
-print("3) Estrategia Normal")
-choice = input("Opción : ").strip()
-
-if choice == "1":
-    from strategies.bb_rsi_otc import bb_rsi_otc_trend as selected_strategy
-    strategy_name = "OTC1"
-elif choice == "2":
-    from strategies.bb_rsi_otc_2 import bb_rsi_otc_trend as selected_strategy
-    strategy_name = "OTC2"
-else:
-    from strategies.bb_rsi_normal_trend import bb_rsi_normal_trend as selected_strategy
-    strategy_name = "Normal"
+# ✅ Seleccionar estrategia usando el menú centralizado
+selected_strategy, strategy_name = select_strategy()
+if not selected_strategy:
+    exit("No se seleccionó una estrategia válida. Saliendo.")
 
 # ✅ Logger
 logger = setup_logger()
 logger.info(f"🚀 Iniciando bot con estrategia: {strategy_name}")
 
 END_HOUR = 20
-LOG_FILE = "logs/operaciones_debug.csv"
 REPORT_DIR = "reports"
 
 os.makedirs(REPORT_DIR, exist_ok=True)

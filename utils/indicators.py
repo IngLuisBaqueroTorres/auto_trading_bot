@@ -1,6 +1,4 @@
 import pandas as pd
-import ta  # usando la librería ta (más estable que ta-lib)
-
 
 def calculate_rsi(series: pd.Series, window: int = 14):
     from ta.momentum import RSIIndicator

@@ -3,6 +3,9 @@
 * pandas
 * python-dotenv
 
+pip install -r requirements.txt
+
+
 # Uso
 * python3 main.py
 # 🧠 Auto Trading Bot (IQ Option)

@@ -41,7 +41,7 @@ def add_indicators(df: pd.DataFrame) -> pd.DataFrame:
         df['atr'] = calculate_atr(df, window=14)
     df['body'] = (df['close'] - df['open']).abs()
     df['avg_body'] = df['body'].rolling(20, min_periods=1).mean()
-    return df
+    return df.dropna()
 
 def bb_rsi_otc_trend(df: pd.DataFrame, last_signal: Optional[str] = None, current_hour: Optional[int] = None) -> Optional[str]:
     """
@@ -51,7 +51,7 @@ def bb_rsi_otc_trend(df: pd.DataFrame, last_signal: Optional[str] = None, curren
     - Usa ATR para definir tamaños de vela mínimos y "fuerza"
     - Filtros anticagadas: no entrar contra vela previa fuerte, no entrar en RSI neutra
     """
-    df = add_indicators(df).dropna()
+    df = add_indicators(df) # dropna() is now inside add_indicators
     if len(df) < 60:
         return None
 

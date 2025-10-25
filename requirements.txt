@@ -1,0 +1,4 @@
+iqoptionapi
+pandas
+python-dotenv
+mplfinance
