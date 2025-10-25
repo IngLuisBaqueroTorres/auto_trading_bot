@@ -29,6 +29,11 @@ AVAILABLE_STRATEGIES = {
         "module": "strategies.bb_rsi_normal_trend",
         "function": "bb_rsi_normal_trend",
     },
+    "6": {
+        "name": "BOT v1 (Auto-Ajustable)",
+        "module": "strategies.bot.self_adjusting_v1",
+        "function": "self_adjusting_strategy_v1",
+    }
 }
 
 def select_strategy():

@@ -4,6 +4,7 @@ import time
 import pandas as pd
 from datetime import datetime
 import os
+import subprocess
 
 from config import (
     EMAIL, PASSWORD, BALANCE_MODE, PAIR,
@@ -12,6 +13,8 @@ from config import (
 from utils.helpers import get_candle_dataframe, is_market_open, signal_to_direction
 from utils.logger import setup_logger
 from utils.strategy_selector import select_strategy
+from utils.config_manager import restore_last_config
+from utils.trade_logger import log_trade
 
 # ✅ Seleccionar estrategia usando el menú centralizado
 selected_strategy, strategy_name = select_strategy()
@@ -114,11 +117,18 @@ try:
 
                     profit = API.check_win_v3(order_id)
                     if profit > 0:
+                        result = "win"
                         logger.info(f"🏆 Operación GANADA | Profit: +{profit:.2f}")
                     elif profit < 0:
+                        result = "loss"
                         logger.info(f"💀 Operación PERDIDA | Pérdida: {profit:.2f}")
                     else:
+                        result = "draw"
                         logger.warning(f"⚠️ Resultado neutro | Profit: {profit:.2f}")
+                    
+                    # Loguear el resultado de la operación
+                    trade_log_data = {**signal_res, "result": result}
+                    log_trade(trade_log_data)
                 else:
                     logger.warning("❌ Falló la ejecución de la orden incluso después del intento doble")
 
@@ -135,3 +145,14 @@ except KeyboardInterrupt:
 finally:
     logger.info("👋 Cerrando bot.")
     API.close()
+    # Solo ejecutar el optimizador si la estrategia es la auto-ajustable
+    if "bot" in strategy_name.lower():
+        logger.info("🧠 Ejecutando optimización post-sesión...")
+        try:
+            # check=True hace que lance una excepción si el script termina con error
+            subprocess.run(["python", "optimize_strategy.py"], check=True, text=True, capture_output=True)
+        except subprocess.CalledProcessError as e:
+            logger.error(f"❌ Error durante la optimización: {e.stderr}. Restaurando última configuración estable.")
+            restore_last_config()
+    else:
+        logger.info("Estrategia no auto-ajustable. Omitiendo optimización.")
