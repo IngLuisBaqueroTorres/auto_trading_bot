@@ -140,6 +140,7 @@ class SettingsPage(ttk.Frame):
         self.vars = {
             "EMAIL": tk.StringVar(),
             "PASSWORD": tk.StringVar(),
+            "BALANCE_MODE": tk.StringVar(),
             "PAIR": tk.StringVar(),
             "AMOUNT": tk.DoubleVar(),
             "DURATION": tk.IntVar(),
@@ -156,18 +157,24 @@ class SettingsPage(ttk.Frame):
         self.create_entry(frame, "Email:", self.vars["EMAIL"], 1)
         self.create_entry(frame, "Contraseña:", self.vars["PASSWORD"], 2, show="*")
         
+        # Selector de modo de cuenta
+        ttk.Label(frame, text="Modo de Cuenta:").grid(row=3, column=0, sticky="w", pady=5, padx=5)
+        balance_mode_menu = ttk.Combobox(frame, textvariable=self.vars["BALANCE_MODE"], state="readonly", width=28)
+        balance_mode_menu['values'] = ["PRACTICE", "REAL"]
+        balance_mode_menu.grid(row=3, column=1, pady=5, padx=5)
+        
         # Selector de moneda
-        ttk.Label(frame, text="Par de Divisas:").grid(row=3, column=0, sticky="w", pady=5)
+        ttk.Label(frame, text="Par de Divisas:").grid(row=4, column=0, sticky="w", pady=5, padx=5)
         self.pair_menu = ttk.Combobox(frame, textvariable=self.vars["PAIR"], state="readonly", width=28)
-        self.pair_menu.grid(row=3, column=1, pady=5)
+        self.pair_menu.grid(row=4, column=1, pady=5, padx=5)
 
-        self.create_entry(frame, "Monto por Operación ($):", self.vars["AMOUNT"], 4)
-        self.create_entry(frame, "Duración (minutos):", self.vars["DURATION"], 5)
-        self.create_entry(frame, "Stop Win ($):", self.vars["STOP_WIN"], 6)
-        self.create_entry(frame, "Stop Loss ($):", self.vars["STOP_LOSS"], 7)
+        self.create_entry(frame, "Monto por Operación ($):", self.vars["AMOUNT"], 5)
+        self.create_entry(frame, "Duración (minutos):", self.vars["DURATION"], 6)
+        self.create_entry(frame, "Stop Win ($):", self.vars["STOP_WIN"], 7)
+        self.create_entry(frame, "Stop Loss ($):", self.vars["STOP_LOSS"], 8)
 
         save_button = ttk.Button(frame, text="Guardar Configuración", command=self.save)
-        save_button.grid(row=8, column=0, columnspan=2, pady=30, ipadx=10, ipady=5)
+        save_button.grid(row=9, column=0, columnspan=2, pady=30, ipadx=10, ipady=5)
 
         self.load_currency_pairs()
         self.on_show()
@@ -192,6 +199,7 @@ class SettingsPage(ttk.Frame):
         
         self.vars["EMAIL"].set(os.getenv("EMAIL", ""))
         self.vars["PASSWORD"].set(os.getenv("PASSWORD", ""))
+        self.vars["BALANCE_MODE"].set(settings.get("BALANCE_MODE"))
         self.vars["PAIR"].set(settings.get("PAIR"))
         self.vars["AMOUNT"].set(settings.get("AMOUNT"))
         self.vars["DURATION"].set(settings.get("DURATION"))

@@ -35,12 +35,12 @@ def add_indicators(df: pd.DataFrame) -> pd.DataFrame:
     if 'rsi' not in df.columns:
         df['rsi'] = calculate_rsi(df['close'], window=14)
     if 'bb_upper' not in df.columns:
-        bb = calculate_bollinger_bands(df['close'], period=20, num_std_dev=2)
+        bb = calculate_bollinger_bands(df['close'], window=20, std_dev=2)
         df = pd.concat([df, bb], axis=1)
     if 'ema' not in df.columns:
         df['ema'] = calculate_ema(df['close'], EMA_PERIOD)
     if 'atr' not in df.columns:
-        df['atr'] = calculate_atr(df, period=14)
+        df['atr'] = calculate_atr(df, window=14)
     
     df['bb_width'] = (df['bb_upper'] - df['bb_lower']) / (df['close'] + 1e-12)
     return df

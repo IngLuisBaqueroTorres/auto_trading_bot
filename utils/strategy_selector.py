@@ -33,6 +33,16 @@ AVAILABLE_STRATEGIES = {
         "name": "BOT v1 (Auto-Ajustable)",
         "module": "strategies.bot.self_adjusting_v1",
         "function": "self_adjusting_strategy_v1",
+    },
+    "7": {
+        "name": "BOT v2 (Ajustable Mejorado)",
+        "module": "strategies.bot.self_adjusting_v2",
+        "function": "self_adjusting_strategy_v2",
+    },
+    "8": {
+        "name": "BOT v3 (Duración Dinámica)",
+        "module": "strategies.bot.self_adjusting_v3",
+        "function": "self_adjusting_strategy_v3",
     }
 }
 
