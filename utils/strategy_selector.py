@@ -43,6 +43,16 @@ AVAILABLE_STRATEGIES = {
         "name": "BOT v3 (Duración Dinámica)",
         "module": "strategies.bot.self_adjusting_v3",
         "function": "self_adjusting_strategy_v3",
+    },
+    "9": {
+        "name": "BOT v4 (Filtro de Sesgo)",
+        "module": "strategies.bot.self_adjusting_v4",
+        "function": "self_adjusting_strategy_v4",
+    },
+    "10": {
+        "name": "BOT v5 (Híbrido Adaptativo)",
+        "module": "strategies.bot.self_adjusting_v5",
+        "function": "self_adjusting_strategy_v5",
     }
 }
 

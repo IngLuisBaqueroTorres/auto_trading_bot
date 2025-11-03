@@ -1,0 +1,4 @@
+timestamp,direction,close,result
+2025-11-03 07:42:00,call,1.145255,loss
+2025-11-03 08:13:00,put,1.153185,win
+2025-11-03 09:13:00,put,1.155495,win

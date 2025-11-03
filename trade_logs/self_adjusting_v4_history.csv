@@ -1,0 +1,2 @@
+strategy_name,direction,bias,rsi,bb_width,ema_fast,ema_slow,atr,timestamp,result
+self_adjusting_v4,put,bullish,80.64134202722062,0.0019157535583147892,1.148847339485761,1.1483321644572084,0.00023214285714280778,2025-11-02 14:17:40,win

@@ -6,7 +6,7 @@ import json
 import shutil
 from datetime import datetime
 
-TRADE_LOG_FILE = "trade_history.csv"
+TRADE_LOG_FILE = "trade_logs/self_adjusting_v1_history.csv"
 STRATEGY_DIR = "strategies/bot"
 CONFIG_FILENAME = "self_adjusting_v1_config.json"
 CONFIG_PATH = os.path.join(STRATEGY_DIR, CONFIG_FILENAME)

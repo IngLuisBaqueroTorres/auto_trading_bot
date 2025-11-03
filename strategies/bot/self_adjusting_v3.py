@@ -30,52 +30,40 @@ def get_params(force_reload: bool = False) -> dict:
     return PARAMS
 
 
-def add_indicators(df: pd.DataFrame) -> pd.DataFrame:
+def add_indicators(df: pd.DataFrame, params: Dict[str, Any]) -> pd.DataFrame:
     """Añade indicadores técnicos necesarios."""
-    params = get_params()
     df = df.copy()
 
-    if 'rsi' not in df.columns:
-        df['rsi'] = calculate_rsi(df['close'], 14)
-    if 'ema_fast' not in df.columns:
-        df['ema_fast'] = calculate_ema(df['close'], 14)
-    if 'ema_slow' not in df.columns:
-        df['ema_slow'] = calculate_ema(df['close'], 50)
-    if 'atr' not in df.columns:
-        df['atr'] = calculate_atr(df, 14)
-    if 'bb_upper' not in df.columns:
-        bb_high, bb_low = calculate_bollinger_bands(df['close'], 20, 2)
-        df['bb_upper'] = bb_high
-        df['bb_lower'] = bb_low
+    # Usar los parámetros (en minúsculas) que vienen del backtester
+    df['rsi'] = calculate_rsi(df['close'], params.get("rsi_period", 14))
+    df['ema_fast'] = calculate_ema(df['close'], params["ema_fast_period"])
+    df['ema_slow'] = calculate_ema(df['close'], params["ema_slow_period"])
+    df['atr'] = calculate_atr(df, params.get("atr_period", 14))
+    bb_high, bb_low = calculate_bollinger_bands(df['close'], params.get("bb_window", 20), params.get("bb_stddev", 2))
+    df['bb_upper'] = bb_high
+    df['bb_lower'] = bb_low
 
     df['bb_width'] = (df['bb_upper'] - df['bb_lower']) / (df['close'] + 1e-12)
     return df.dropna()
 
 
 def self_adjusting_strategy_v3(
-    df: pd.DataFrame,
-    last_signal: Optional[str] = None,
-    current_hour: Optional[int] = None
+    df: pd.DataFrame, params: Dict[str, Any]
 ) -> Optional[Dict[str, Any]]:
     """
-    Estrategia autoajustable v3 — detecta tendencias amplias y ajusta la duración.
-    - Analiza las últimas 100 velas para estimar fuerza direccional.
-    - Ajusta la duración esperada de la operación (1, 5 o 10 minutos).
-    - Combina señales de reversión (v2) y continuación (v3 core).
+    Wrapper de la estrategia v3 para ser compatible con el backtester.
     """
-    params = get_params()
-    df = add_indicators(df)
-    if len(df) < 100:
+    df = add_indicators(df.copy(), params)
+    if len(df) < 100: # Necesita historial para el análisis de tendencia
         return None
 
     last = df.iloc[-1]
     prev = df.iloc[-2]
 
-    now = datetime.now(timezone.utc)
-    if current_hour is None:
-        current_hour = now.hour
-
-    if not (params['TRADING_START_HOUR'] <= current_hour < params['TRADING_END_HOUR']):
+    # El backtester no simula la hora, así que omitimos este chequeo
+    # if not (params['trading_start_hour'] <= current_hour < params['trading_end_hour']):
+    #     return None
+    if not (params.get('trading_start_hour', 0) <= datetime.now().hour < params.get('trading_end_hour', 24)):
         return None
 
     # --- 1️⃣ Análisis de estructura general ---
@@ -88,9 +76,9 @@ def self_adjusting_strategy_v3(
     bias = "bullish" if up_ratio > 0.55 else ("bearish" if up_ratio < 0.45 else "neutral")
 
     # --- 2️⃣ Ajuste de duración según contexto ---
-    if trend_strength > params['TREND_STRONG_THRESHOLD']:
+    if trend_strength > params['trend_strong_threshold']:
         duration = 10
-    elif trend_strength > params['TREND_MEDIUM_THRESHOLD']:
+    elif trend_strength > params['trend_medium_threshold']:
         duration = 5
     else:
         duration = 1
@@ -99,33 +87,37 @@ def self_adjusting_strategy_v3(
     direction = None
 
     # Tendencia fuerte → continuación
-    if trend_strength > params['TREND_MEDIUM_THRESHOLD']:
-        if (
-            bias == "bullish" and
-            last['close'] > last['ema_slow'] and
-            last['rsi'] > 50 and
-            last['close'] > prev['close']
+    if trend_strength > params['trend_medium_threshold']:
+        if ( # Señal de continuación alcista fortalecida
+            bias == "bullish"
+            and last['close'] > last['ema_slow']
+            and last['ema_fast'] > last['ema_slow']  # tendencia alineada
+            and last['rsi'] > 55
+            and last['close'] > prev['high']          # rompe máximo anterior
         ):
             direction = "call"
-        elif (
-            bias == "bearish" and
-            last['close'] < last['ema_slow'] and
-            last['rsi'] < 50 and
-            last['close'] < prev['close']
+        elif ( # Señal de continuación bajista fortalecida
+            bias == "bearish"
+            and last['close'] < last['ema_slow']
+            and last['ema_fast'] < last['ema_slow']
+            and last['rsi'] < 45
+            and last['close'] < prev['low']
         ):
             direction = "put"
 
     # Mercado sin dirección → posible reversión
-    elif (
-        prev['close'] > prev['bb_upper'] - params['BB_TOUCH_TOLERANCE'] and
-        last['rsi'] > params['RSI_OVERBOUGHT'] and
+    elif ( # Reversión bajista con confirmación de momentum
+        prev['close'] > prev['bb_upper'] - params['bb_touch_tolerance'] and
+        last['rsi'] > params['rsi_overbought'] and
         last['close'] < prev['close']
+        and last['ema_fast'] < prev['ema_fast']
     ):
         direction = "put"
-    elif (
-        prev['close'] < prev['bb_lower'] + params['BB_TOUCH_TOLERANCE'] and
-        last['rsi'] < params['RSI_OVERSOLD'] and
+    elif ( # Reversión alcista con confirmación de momentum
+        prev['close'] < prev['bb_lower'] + params['bb_touch_tolerance'] and
+        last['rsi'] < params['rsi_oversold'] and
         last['close'] > prev['close']
+        and last['ema_fast'] > prev['ema_fast']
     ):
         direction = "call"
 
@@ -133,12 +125,16 @@ def self_adjusting_strategy_v3(
         return None
 
     # --- 4️⃣ Filtros de confirmación ---
-    if last['bb_width'] < params['MIN_BB_WIDTH']:
+    if last['bb_width'] < params['min_bb_width']:
+        logger.debug(f"📉 [DESCARTADA] Mercado plano por BB width | bias={bias} | trend_strength={trend_strength:.6f} | RSI={last['rsi']:.2f}")
         return None
-    if atr_now < atr_mean * params['ATR_VOLATILITY_DROP']:
+    if atr_now < atr_mean * params['atr_volatility_drop']:
+        logger.debug(f"📉 [DESCARTADA] Mercado plano por ATR drop | bias={bias} | trend_strength={trend_strength:.6f} | RSI={last['rsi']:.2f}")
         return None
 
-    logger.info(f"✅ Señal v3: {direction.upper()} | fuerza={trend_strength:.4f} | dur={duration}m | bias={bias}")
+    logger.info(
+        f"✅ Señal V3: {direction.upper()} | dur={duration}m | trend_strength={trend_strength:.6f} | bias={bias} | ema_slope={ema_slope:.6f}"
+    )
 
     return {
         "strategy_name": "self_adjusting_v3",
@@ -147,7 +143,5 @@ def self_adjusting_strategy_v3(
         "bias": bias,
         "duration_minutes": duration,
         "ema_slope": ema_slope,
-        "rsi": last["rsi"],
-        "atr": last["atr"],
-        "timestamp": now
+        "rsi": last["rsi"]
     }
