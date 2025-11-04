@@ -1,36 +1,20 @@
 {
   "NORMAL_PARAMS": {
-    "EMA_FAST_PERIOD": 9,          
-    "EMA_SLOW_PERIOD": 21,        
-    "EMA_EXTRA_PERIOD": 50,        
-    "RSI_OVERBOUGHT": 75,          
-    "RSI_OVERSOLD": 25,           
-    "RSI_PERIOD": 13,              
-    "ATR_PERIOD": 14,
-    "BB_WINDOW": 30,               
-    "BB_STDDEV": 2.5,              
-    "MIN_BB_WIDTH": 0.0002,       
-    "ATR_MEAN_PERIOD": 50,            
-    "ATR_VOLATILITY_DROP": 0.75,   
-    "EMA_SLOPE_LOOKBACK": 3        
+    "EMA_FAST_PERIOD": 9,
+    "EMA_SLOW_PERIOD": 21,
+    "EMA_EXTRA_PERIOD": 50,
+    "RSI_OVERBOUGHT": 60,
+    "RSI_OVERSOLD": 40,
+    "RSI_PERIOD": 13,
+    "BB_WINDOW": 30,
+    "BB_STDDEV": 2.0,
+    "MIN_BB_WIDTH": 0.0003,
+    "EMA_SLOPE_LOOKBACK": 3
   },
-  "RELAXED_PARAMS_L1": {
-    "RSI_OVERBOUGHT": 72,
-    "RSI_OVERSOLD": 28,
-    "CONFIRMATIONS_TO_ENTER": 3    
-  },
-  "RELAXED_PARAMS_L2": {
-    "RSI_OVERBOUGHT": 70,
-    "RSI_OVERSOLD": 30,
-    "CONFIRMATIONS_TO_ENTER": 2
-  },
-  "INACTIVITY_THRESHOLD_L1": 120,  
-  "INACTIVITY_THRESHOLD_L2": 240,
-  
   "FILTERS": {
-    "REQUIRE_EMA_EXTRA_ALIGNMENT": true,
-    "AVOID_LOW_VOLATILITY": true,
-    "REQUIRE_MOMENTUM": true,
-    "CONFIRMATIONS_TO_ENTER": 4     
+    "REQUIRE_EMA_EXTRA_ALIGNMENT": false,
+    "AVOID_LOW_VOLATILITY": false,
+    "REQUIRE_MOMENTUM": false,
+    "CONFIRMATIONS_TO_ENTER": 2
   }
 }
