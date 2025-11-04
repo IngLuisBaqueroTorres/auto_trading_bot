@@ -19,7 +19,7 @@ def get_settings():
     # Valores por defecto para settings.json
     defaults = {
         "BALANCE_MODE": "PRACTICE",
-        "PAIR": "EURUSD-OTC",
+        "PAIR": "EURUSD",
         "AMOUNT": 1,
         "DURATION": 1,
         "STOP_WIN": 10,

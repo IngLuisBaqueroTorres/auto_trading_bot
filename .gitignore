@@ -1,7 +1,19 @@
-config.py
+# Archivos compilados de Python
 __pycache__/
 *.pyc
+*.pyo
+*.pyd
+
+# Entornos virtuales
+venv/
+*env/
+.venv/
+
+# Archivos de logs y resultados generados por la aplicación
+/logs/
+/results/
+/trade_logs/
+
+# Archivos de configuración y credenciales
 .env
-logs/
-reports/
-historical_data/
+/strategies/bot/config_versions/

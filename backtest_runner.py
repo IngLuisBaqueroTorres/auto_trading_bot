@@ -70,31 +70,46 @@ def run_backtest(strategy_key: str):
     logger.info("Ejecutando backtest...")
     results = []
 
+    # backtest_runner.py (solo el bucle modificado)
     for i in range(len(df_ind)):
         sub = df_ind.iloc[:i + 1]
         signal = analyze_func(sub, params)
 
         if signal:
             entry_price = sub.iloc[-1]["close"]
-            duration_minutes = signal.get("duration_minutes", 1)
-            exit_index = i + duration_minutes
-
-            result = None
-            if exit_index < len(df_ind):
-                exit_price = df_ind.iloc[exit_index]["close"]
-                if signal["direction"] == "call":
-                    result = "win" if exit_price > entry_price else "loss" if exit_price < entry_price else "draw"
-                elif signal["direction"] == "put":
-                    result = "win" if exit_price < entry_price else "loss" if exit_price > entry_price else "draw"
-
-            # GUARDAR RSI Y BB_WIDTH
-            last_row = sub.iloc[-1]
+            direction = signal["direction"]
+            max_duration = signal.get("duration_minutes", 5)
+            result = "loss"  # Por defecto
+    
+            for j in range(1, max_duration + 1):
+                exit_idx = i + j
+                if exit_idx >= len(df_ind):
+                    break
+                exit_price = df_ind.iloc[exit_idx]["close"]
+                exit_row = df_ind.iloc[exit_idx]
+    
+                # Salida por toque de banda
+                if direction == "call" and exit_price >= exit_row['bb_upper']:
+                    result = "win"
+                    break
+                if direction == "put" and exit_price <= exit_row['bb_lower']:
+                    result = "win"
+                    break
+                
+                # Ganancia temprana
+                if direction == "call" and exit_price > entry_price:
+                    result = "win"
+                    break
+                if direction == "put" and exit_price < entry_price:
+                    result = "win"
+                    break
+                
             results.append({
-                "timestamp": last_row["timestamp"],
-                "direction": signal["direction"],
-                "close": last_row["close"],
-                "rsi": round(last_row.get("rsi", 0), 2),
-                "bb_width": round(last_row.get("bb_width", 0), 6),
+                "timestamp": sub.iloc[-1]["timestamp"],
+                "direction": direction,
+                "close": entry_price,
+                "rsi": round(sub.iloc[-1].get("rsi", 0), 2),
+                "bb_width": round(sub.iloc[-1].get("bb_width", 0), 6),
                 "result": result
             })
 

@@ -1,20 +1,20 @@
 {
-  "NORMAL_PARAMS": {
-    "EMA_FAST_PERIOD": 9,
-    "EMA_SLOW_PERIOD": 21,
-    "EMA_EXTRA_PERIOD": 50,
-    "RSI_OVERBOUGHT": 60,
-    "RSI_OVERSOLD": 40,
-    "RSI_PERIOD": 13,
-    "BB_WINDOW": 30,
-    "BB_STDDEV": 2.0,
-    "MIN_BB_WIDTH": 0.0003,
-    "EMA_SLOPE_LOOKBACK": 3
-  },
-  "FILTERS": {
-    "REQUIRE_EMA_EXTRA_ALIGNMENT": false,
-    "AVOID_LOW_VOLATILITY": false,
-    "REQUIRE_MOMENTUM": false,
-    "CONFIRMATIONS_TO_ENTER": 2
-  }
+  "ema_fast_period": 9,
+  "ema_slow_period": 21,
+  "ema_trend_period": 200,
+  "rsi_period": 13,
+  "rsi_overbought": 60,
+  "rsi_oversold": 40,
+  "bb_window": 30,
+  "bb_stddev": 2.0,
+  "min_bb_width": 0.0003,
+  "min_bb_width_trend": 0.0008,
+  "confirmations_to_enter": 1,
+
+  "start_hour": 8,
+  "end_hour": 20,
+
+  "require_ema_extra_alignment": false,
+  "avoid_low_volatility": false,
+  "require_momentum": false
 }
