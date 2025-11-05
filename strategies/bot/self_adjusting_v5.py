@@ -1,6 +1,8 @@
 # strategies/bot/self_adjusting_v5.py
 import pandas as pd
 import numpy as np
+import json
+import os
 from datetime import datetime
 
 try:
@@ -8,6 +10,16 @@ try:
 except ImportError:
     raise ImportError("Instala: pip install ta-lib")
 
+PARAMS_V5 = None
+
+def get_params_v5(force_reload: bool = False) -> dict:
+    """Carga los parámetros de configuración desde JSON (con caché)."""
+    global PARAMS_V5
+    if force_reload or PARAMS_V5 is None:
+        config_path = os.path.join(os.path.dirname(__file__), 'self_adjusting_v5_config.json')
+        with open(config_path, 'r') as f:
+            PARAMS_V5 = json.load(f)
+    return PARAMS_V5
 
 def add_indicators(df: pd.DataFrame, params: dict) -> pd.DataFrame:
     close = df['close'].values
@@ -36,16 +48,24 @@ def add_indicators(df: pd.DataFrame, params: dict) -> pd.DataFrame:
     return df
 
 
-def self_adjusting_strategy_v5(data: pd.DataFrame, params: dict):
+def self_adjusting_strategy_v5(data: pd.DataFrame, params: dict = None, last_signal: str = None, current_hour: int = None):
+    # Si los parámetros no se pasan, los carga desde el archivo.
+    # Esto da compatibilidad con main.py y con el backtester.
+    if params is None:
+        params = get_params_v5()
+
     if len(data) < 200:
         return None
 
     # --- FILTRO DE HORARIO ---
-    now = datetime.now().time()
+    # Usar la hora que viene del main.py para consistencia con backtesting
+    if current_hour is None:
+        current_hour = datetime.now().hour
+
     start_hour = params.get("start_hour", 8)   # hora de inicio (por defecto 8)
     end_hour = params.get("end_hour", 20)      # hora de fin (por defecto 20)
 
-    if not (start_hour <= now.hour < end_hour):
+    if not (start_hour <= current_hour < end_hour):
         return None  # fuera del horario permitido
 
     df = data.copy()
