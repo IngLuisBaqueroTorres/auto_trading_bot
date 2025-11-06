@@ -25,7 +25,10 @@ def get_settings():
         "STOP_WIN": 10,
         "STOP_LOSS": 10,
         "CANDLE_DURATION": 60,
-        "NUM_CANDLES": 200
+        "NUM_CANDLES": 200,
+        "TRAILING_STOP_ENABLED": False,
+        "TRAILING_STOP_WIN_PERCENT": 2.0,
+        "TRAILING_STOP_LOSS_PERCENT": 1.0
     }
 
     if not os.path.exists(SETTINGS_FILE):

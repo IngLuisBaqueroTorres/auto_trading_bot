@@ -14,7 +14,14 @@
   "start_hour": 8,
   "end_hour": 20,
 
-  "require_ema_extra_alignment": false,
-  "avoid_low_volatility": false,
-  "require_momentum": false
+  "require_ema_extra_alignment": true,
+  "ema_fast_extra": 10,
+  "ema_slow_extra": 30,
+
+  "require_momentum": true,
+  "adx_period": 14,
+  "adx_min": 20,
+
+  "cooldown_after_losses": 2,
+  "cooldown_minutes": 5
 }

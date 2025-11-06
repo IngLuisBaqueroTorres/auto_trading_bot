@@ -146,6 +146,10 @@ class SettingsPage(ttk.Frame):
             "DURATION": tk.IntVar(),
             "STOP_WIN": tk.DoubleVar(),
             "STOP_LOSS": tk.DoubleVar(),
+            # Nuevas variables para el Trailing Stop
+            "TRAILING_STOP_ENABLED": tk.BooleanVar(),
+            "TRAILING_STOP_WIN_PERCENT": tk.DoubleVar(),
+            "TRAILING_STOP_LOSS_PERCENT": tk.DoubleVar(),
         }
 
         frame = ttk.Frame(self, padding="20")
@@ -168,20 +172,49 @@ class SettingsPage(ttk.Frame):
         self.pair_menu = ttk.Combobox(frame, textvariable=self.vars["PAIR"], state="readonly", width=28)
         self.pair_menu.grid(row=4, column=1, pady=5, padx=5)
 
-        self.create_entry(frame, "Monto por Operación ($):", self.vars["AMOUNT"], 5)
-        self.create_entry(frame, "Duración (minutos):", self.vars["DURATION"], 6)
-        self.create_entry(frame, "Stop Win ($):", self.vars["STOP_WIN"], 7)
-        self.create_entry(frame, "Stop Loss ($):", self.vars["STOP_LOSS"], 8)
+        self.create_entry(frame, "Monto por Operación ($):", self.vars["AMOUNT"], 5) # Sin guardar referencia
+        self.create_entry(frame, "Duración (minutos):", self.vars["DURATION"], 6) # Sin guardar referencia
+        self.stop_win_widgets = self.create_entry(frame, "Stop Win ($):", self.vars["STOP_WIN"], 7)
+        self.stop_loss_widgets = self.create_entry(frame, "Stop Loss ($):", self.vars["STOP_LOSS"], 8)
+        
+        # --- Trailing Stop ---
+        ttk.Separator(frame, orient='horizontal').grid(row=9, column=0, columnspan=2, sticky='ew', pady=15)
+        
+        self.trailing_switch = ttk.Checkbutton(frame, text="Activar Trailing Stop Porcentual", variable=self.vars["TRAILING_STOP_ENABLED"], command=self.toggle_trailing_fields)
+        self.trailing_switch.grid(row=10, column=0, columnspan=2, sticky="w", padx=5)
+
+        self.trailing_win_label = self.create_entry(frame, "Reajuste de Ganancia (%):", self.vars["TRAILING_STOP_WIN_PERCENT"], 11)
+        self.trailing_loss_label = self.create_entry(frame, "Nuevo Stop Loss (% sobre ganancia):", self.vars["TRAILING_STOP_LOSS_PERCENT"], 12)
 
         save_button = ttk.Button(frame, text="Guardar Configuración", command=self.save)
-        save_button.grid(row=9, column=0, columnspan=2, pady=30, ipadx=10, ipady=5)
+        save_button.grid(row=13, column=0, columnspan=2, pady=30, ipadx=10, ipady=5)
 
         self.load_currency_pairs()
         self.on_show()
 
     def create_entry(self, parent, text, var, row, show=None):
-        ttk.Label(parent, text=text).grid(row=row, column=0, sticky="w", pady=5, padx=5)
-        ttk.Entry(parent, textvariable=var, show=show, width=30).grid(row=row, column=1, pady=5, padx=5)
+        label = ttk.Label(parent, text=text)
+        label.grid(row=row, column=0, sticky="w", pady=5, padx=5)
+        entry = ttk.Entry(parent, textvariable=var, show=show, width=30)
+        entry.grid(row=row, column=1, pady=5, padx=5)
+        return label, entry # Devolvemos los widgets para poder ocultarlos
+
+    def toggle_trailing_fields(self):
+        """Muestra u oculta los campos de configuración del trailing stop."""
+        is_trailing_enabled = self.vars["TRAILING_STOP_ENABLED"].get()
+        
+        trailing_state = "normal" if is_trailing_enabled else "disabled"
+        normal_stop_state = "disabled" if is_trailing_enabled else "normal"
+
+        # Activa/desactiva los campos del Trailing Stop
+        for label, entry in [self.trailing_win_label, self.trailing_loss_label]:
+            label.config(state=trailing_state)
+            entry.config(state=trailing_state)
+            
+        # Activa/desactiva los campos de Stop Win/Loss normales
+        for label, entry in [self.stop_win_widgets, self.stop_loss_widgets]:
+            label.config(state=normal_stop_state)
+            entry.config(state=normal_stop_state)
 
     def load_currency_pairs(self):
         try:
@@ -205,6 +238,12 @@ class SettingsPage(ttk.Frame):
         self.vars["DURATION"].set(settings.get("DURATION"))
         self.vars["STOP_WIN"].set(settings.get("STOP_WIN"))
         self.vars["STOP_LOSS"].set(settings.get("STOP_LOSS"))
+        # Cargar nuevos valores
+        self.vars["TRAILING_STOP_ENABLED"].set(settings.get("TRAILING_STOP_ENABLED", False))
+        self.vars["TRAILING_STOP_WIN_PERCENT"].set(settings.get("TRAILING_STOP_WIN_PERCENT", 2.0))
+        self.vars["TRAILING_STOP_LOSS_PERCENT"].set(settings.get("TRAILING_STOP_LOSS_PERCENT", 1.0))
+
+        self.toggle_trailing_fields() # Actualizar visibilidad de campos
 
     def save(self):
         """Guarda la configuración actual en los archivos."""

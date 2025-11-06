@@ -4,5 +4,8 @@
     "AMOUNT": 1.0,
     "DURATION": 1,
     "STOP_WIN": 20.0,
-    "STOP_LOSS": 10.0
+    "STOP_LOSS": 10.0,
+    "TRAILING_STOP_ENABLED": true,
+    "TRAILING_STOP_WIN_PERCENT": 2.0,
+    "TRAILING_STOP_LOSS_PERCENT": 3.0
 }

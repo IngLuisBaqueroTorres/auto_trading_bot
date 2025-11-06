@@ -1,9 +1,8 @@
-# strategies/bot/self_adjusting_v5.py
 import pandas as pd
 import numpy as np
 import json
 import os
-from datetime import datetime
+from datetime import datetime, timedelta
 
 try:
     import talib as ta
@@ -11,6 +10,9 @@ except ImportError:
     raise ImportError("Instala: pip install ta-lib")
 
 PARAMS_V5 = None
+CONSECUTIVE_LOSSES = 0
+COOLDOWN_UNTIL = None
+
 
 def get_params_v5(force_reload: bool = False) -> dict:
     """Carga los parámetros de configuración desde JSON (con caché)."""
@@ -21,14 +23,14 @@ def get_params_v5(force_reload: bool = False) -> dict:
             PARAMS_V5 = json.load(f)
     return PARAMS_V5
 
+
 def add_indicators(df: pd.DataFrame, params: dict) -> pd.DataFrame:
     close = df['close'].values
     high = df['high'].values
     low = df['low'].values
-
     p = params
 
-    # EMAs
+    # EMAs principales
     df['ema_fast'] = ta.EMA(close, timeperiod=p.get('ema_fast_period', 9))
     df['ema_slow'] = ta.EMA(close, timeperiod=p.get('ema_slow_period', 21))
     df['ema_trend'] = ta.EMA(close, timeperiod=p.get('ema_trend_period', 200))
@@ -36,7 +38,10 @@ def add_indicators(df: pd.DataFrame, params: dict) -> pd.DataFrame:
     # RSI
     df['rsi'] = ta.RSI(close, timeperiod=p.get('rsi_period', 13))
 
-    # Bollinger Bands
+    # ADX (fuerza de tendencia)
+    df['adx'] = ta.ADX(high, low, close, timeperiod=p.get('adx_period', 14))
+
+    # Bandas de Bollinger
     bb_window = p.get('bb_window', 30)
     bb_std = p.get('bb_stddev', 2.0)
     upper, middle, lower = ta.BBANDS(close, timeperiod=bb_window, nbdevup=bb_std, nbdevdn=bb_std)
@@ -48,31 +53,34 @@ def add_indicators(df: pd.DataFrame, params: dict) -> pd.DataFrame:
     return df
 
 
-def self_adjusting_strategy_v5(data: pd.DataFrame, params: dict = None, last_signal: str = None, current_hour: int = None):
-    # Si los parámetros no se pasan, los carga desde el archivo.
-    # Esto da compatibilidad con main.py y con el backtester.
+def self_adjusting_strategy_v5(data: pd.DataFrame, params: dict = None,
+                               last_signal: str = None, current_hour: int = None):
+    """Estrategia híbrida adaptativa V5 mejorada con filtros de tendencia, momentum y cooldown."""
+    global CONSECUTIVE_LOSSES, COOLDOWN_UNTIL
+
     if params is None:
         params = get_params_v5()
 
     if len(data) < 200:
         return None
 
-    # --- FILTRO DE HORARIO ---
-    # Usar la hora que viene del main.py para consistencia con backtesting
+    # --- COOLDOWN INTELIGENTE ---
+    if COOLDOWN_UNTIL and datetime.now() < COOLDOWN_UNTIL:
+        return None
+
+    # --- HORARIO DE OPERACIÓN ---
     if current_hour is None:
         current_hour = datetime.now().hour
 
-    start_hour = params.get("start_hour", 8)   # hora de inicio (por defecto 8)
-    end_hour = params.get("end_hour", 20)      # hora de fin (por defecto 20)
-
+    start_hour = params.get("start_hour", 8)
+    end_hour = params.get("end_hour", 20)
     if not (start_hour <= current_hour < end_hour):
-        return None  # fuera del horario permitido
+        return None
 
-    df = data.copy()
-    df = add_indicators(df, params)
+    df = add_indicators(data.copy(), params)
     candle = df.iloc[-1]
 
-    # --- PARÁMETROS ---
+    # --- PARÁMETROS BASE ---
     overbought = params.get('rsi_overbought', 60)
     oversold = params.get('rsi_oversold', 40)
     min_bb_width = params.get('min_bb_width', 0.0003)
@@ -81,18 +89,36 @@ def self_adjusting_strategy_v5(data: pd.DataFrame, params: dict = None, last_sig
     lookback_rsi = 10
     lookback_cross = 3
 
-    # --- FILTROS ---
+    # --- FILTROS DE CALIDAD ---
     if pd.isna(candle['rsi']) or pd.isna(candle['ema_trend']):
         return None
-
     if candle['bb_width'] < min_bb_trend:
-        return None  # evitar operar en rango estrecho
+        return None
 
-    # --- TENDENCIA (EMA 200) ---
+    # --- TENDENCIA PRINCIPAL (EMA 200) ---
     price_above_trend = candle['close'] > candle['ema_trend']
     price_below_trend = candle['close'] < candle['ema_trend']
 
-    # --- CRUCE RECIENTE DE EMA ---
+    # --- CONFIRMACIÓN DE TENDENCIA ADICIONAL (EMA 10 vs 30) ---
+    ema_fast2 = ta.EMA(df['close'], timeperiod=params.get('ema_fast_extra', 10))
+    ema_slow2 = ta.EMA(df['close'], timeperiod=params.get('ema_slow_extra', 30))
+    trend_up = ema_fast2.iloc[-1] > ema_slow2.iloc[-1]
+    trend_down = ema_fast2.iloc[-1] < ema_slow2.iloc[-1]
+
+    if params.get("require_ema_extra_alignment", True):
+        if trend_up and not price_above_trend:
+            return None
+        if trend_down and not price_below_trend:
+            return None
+
+    # --- MOMENTUM FILTER (RSI + ADX) ---
+    if params.get("require_momentum", True):
+        if 45 <= candle['rsi'] <= 55:
+            return None  # zona neutral
+        if candle['adx'] < params.get("adx_min", 20):
+            return None  # baja fuerza de tendencia
+
+    # --- CRUCE RECIENTE DE EMA (9 vs 21) ---
     recent = df.tail(lookback_cross)
     ema_cross_up = any(
         recent.iloc[i-1]['ema_fast'] <= recent.iloc[i-1]['ema_slow'] and
@@ -116,10 +142,27 @@ def self_adjusting_strategy_v5(data: pd.DataFrame, params: dict = None, last_sig
         if row['rsi'] < oversold and row['bb_width'] > min_bb_width
     )
 
-    # --- SEÑAL ---
+    # --- SEÑAL FINAL ---
     if put_confirm >= conf_needed and ema_cross_down and price_below_trend:
-        return {"direction": "put", "duration_minutes": 5}  # máximo 5 velas
+        return {"direction": "put", "duration_minutes": 5}
+
     if call_confirm >= conf_needed and ema_cross_up and price_above_trend:
         return {"direction": "call", "duration_minutes": 5}
 
     return None
+
+
+def register_trade_result(result: str):
+    """Actualiza el estado del bot tras cada operación (para cooldown inteligente)."""
+    global CONSECUTIVE_LOSSES, COOLDOWN_UNTIL
+    params = get_params_v5()
+
+    if result == "loss":
+        CONSECUTIVE_LOSSES += 1
+    else:
+        CONSECUTIVE_LOSSES = 0
+
+    if CONSECUTIVE_LOSSES >= params.get("cooldown_after_losses", 2):
+        minutes = params.get("cooldown_minutes", 5)
+        COOLDOWN_UNTIL = datetime.now() + timedelta(minutes=minutes)
+        print(f"[COOLDOWN] Activado por {minutes} minutos tras {CONSECUTIVE_LOSSES} pérdidas consecutivas.")
