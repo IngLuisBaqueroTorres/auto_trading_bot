@@ -53,3 +53,21 @@ pip install -r requirements.txt
     - **Trading en vivo**: Ve a `📈 Estrategias`, selecciona una y haz clic en `▶ Iniciar Bot en Vivo`.
     - **Backtesting**: Usa la opción `⏪ Ejecutar Backtest` del menú.
     - **Análisis**: Usa la opción `📊 Analizar Resultados` para revisar el rendimiento de sesiones pasadas.
+
+## 🧪 Backtesting (Línea de Comandos)
+
+Para probar una estrategia con datos históricos desde la terminal, sigue estos pasos:
+
+1.  **Generar datos de velas**:
+    Este comando descarga los datos históricos necesarios para el backtest.
+    ```bash
+    py fetch_candles.py
+    ```
+
+2.  **Ejecutar el backtest**:
+    Usa `backtest_runner.py` seguido del número de la estrategia que quieres probar.
+    ```bash
+    # Ejemplo para probar la estrategia 10
+    py backtest_runner.py 10
+    ```
+    Puedes encontrar el número de cada estrategia en `utils/strategy_selector.py`.

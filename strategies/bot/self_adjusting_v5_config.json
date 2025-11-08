@@ -2,7 +2,6 @@
   "ema_fast_period": 9,
   "ema_slow_period": 21,
   "ema_trend_period": 200,
-  "rsi_period": 13,
   "rsi_overbought": 60,
   "rsi_oversold": 40,
   "bb_window": 30,
@@ -11,17 +10,24 @@
   "min_bb_width_trend": 0.0008,
   "confirmations_to_enter": 1,
 
+  "ema_fast": 5,
+  "ema_slow": 15,
+  "rsi_period": 14,
+  "atr_period": 14,
+  "timeframe": 60,
+  "num_candles": 200,
+  "cooldown_minutes": 5,
+  "max_retries": 2,
+
   "start_hour": 8,
   "end_hour": 20,
 
-  "require_ema_extra_alignment": true,
-  "ema_fast_extra": 10,
-  "ema_slow_extra": 30,
+  "require_ema_extra_alignment": false,
+  "avoid_low_volatility": false,
+  "require_momentum": false,
 
-  "require_momentum": true,
-  "adx_period": 14,
-  "adx_min": 20,
-
-  "cooldown_after_losses": 2,
-  "cooldown_minutes": 5
+  "cooldown_config": {
+    "max_failed_attempts": 2,
+    "cooldown_seconds": 300
+  }
 }

@@ -49,10 +49,15 @@ AVAILABLE_STRATEGIES = {
         "module": "strategies.bot.self_adjusting_v4",
         "function": "self_adjusting_strategy_v4",
     },
-    "10": {
+    "self_adjusting_strategy_v5": {
         "name": "BOT v5 (Híbrido Adaptativo)",
         "module": "strategies.bot.self_adjusting_v5",
         "function": "self_adjusting_strategy_v5",
+    },
+     "self_adjusting_strategy_v6": {
+        "name": "BOT v6 (Híbrido Adaptativo)",
+        "module": "strategies.bot.self_adjusting_v6",
+        "function": "self_adjusting_strategy_v6",
     }
 }
 
