@@ -9,6 +9,7 @@ from utils.logger import setup_logger
 from utils.config_manager import get_settings
 from utils.strategy_selector import AVAILABLE_STRATEGIES
 from utils.trade_logger import log_trade
+from utils.news_fetcher import fetch_high_impact_news, is_news_time, is_relevant_for_pair
 
 logger = setup_logger()
 
@@ -44,14 +45,20 @@ def main():
 
     BALANCE_MODE = settings.get("BALANCE_MODE", "PRACTICE").upper()
     PAIR = settings.get("PAIR", "EURUSD")
-    AMOUNT = settings.get("AMOUNT", 1.0)  # $ o % según modo
+    AMOUNT = settings.get("AMOUNT", 1.0)  # ← ENTRADA FIJA: $1.00
     DURATION = settings.get("DURATION", 1)
-    STOP_WIN = settings.get("STOP_WIN", 10.0)      # $ o % según modo
-    STOP_LOSS = settings.get("STOP_LOSS", 5.0)     # $ o % según modo
-    USE_PERCENT_MODE = settings.get("USE_PERCENT_MODE", True)  # True = %, False = $
+    USE_PERCENT_MODE = settings.get("USE_PERCENT_MODE", False)
     MAX_RETRY_PER_SIGNAL = settings.get("MAX_RETRY_PER_SIGNAL", 1)
     SIGNAL_COOLDOWN_MINUTES = settings.get("SIGNAL_COOLDOWN_MINUTES", 1)
     SIGNAL_COOLDOWN_SECONDS = SIGNAL_COOLDOWN_MINUTES * 60
+
+    # === STOP WIN/LOSS: SEGÚN MODO (solo trailing o fijo) ===
+    if USE_PERCENT_MODE:
+        STOP_WIN = settings.get("TRAILING_STOP_WIN_PERCENT", 2.0)
+        STOP_LOSS = settings.get("TRAILING_STOP_LOSS_PERCENT", 1.0)
+    else:
+        STOP_WIN = settings.get("STOP_WIN", 10.0)
+        STOP_LOSS = settings.get("STOP_LOSS", 5.0)
 
     # === CARGAR ESTRATEGIA DINÁMICAMENTE ===
     STRATEGY_NAME = settings.get("STRATEGY", "self_adjusting_strategy_v6")
@@ -104,20 +111,20 @@ def main():
             f"Entrada: ${AMOUNT:.2f}"
         )
     else:
-        # MODO PORCENTUAL CON TRAILING
+        # MODO PORCENTUAL (solo trailing)
         target_balance = initial_balance * (1 + STOP_WIN / 100)
         stop_balance = initial_balance * (1 - STOP_LOSS / 100)
-        entry_text = f"{AMOUNT:.2f}%"
+        entry_text = f"${AMOUNT:.2f}"
 
-        logger.info(f"Modo PORCENTUAL: +{STOP_WIN}% / -{STOP_LOSS}%")
+        logger.info(f"Modo PORCENTUAL (trailing): +{STOP_WIN}% / -{STOP_LOSS}%")
         logger.info(f"Meta inicial: ${target_balance:.2f} | Stop: ${stop_balance:.2f}")
 
         send_telegram_message(
-            f"Bot iniciado (PORCENTUAL)\n"
+            f"Bot iniciado (TRAILING)\n"
             f"Balance: ${initial_balance:.2f}\n"
             f"Meta: +{STOP_WIN}% → ${target_balance:.2f}\n"
             f"Stop Loss: -{STOP_LOSS}% → ${stop_balance:.2f}\n"
-            f"Entrada: {AMOUNT:.2f}% del balance"
+            f"Entrada: ${AMOUNT:.2f} fijo"
         )
 
     # === VARIABLES DE CONTROL ===
@@ -151,6 +158,19 @@ def main():
             time.sleep(5)
             continue
 
+        # ---- Filtro de Noticias (NUEVO) ----
+        try:
+            all_news = fetch_high_impact_news()
+            relevant_news = is_relevant_for_pair(all_news, PAIR)
+            if is_news_time(datetime.now(), relevant_news, before=20, after=10):
+                logger.warning(f"Noticia de alto impacto cercana para {PAIR}. Pausando operaciones.")
+                send_telegram_message(f"Pausa por noticia en {PAIR}. Reanudando en 10-20 min.")
+                time.sleep(300)
+                continue
+        except Exception as e:
+            logger.error(f"Error al comprobar noticias: {e}")
+            time.sleep(60)
+
         # ---- Generar señal ----
         signal_res = selected_strategy(candles, last_signal, current_hour=datetime.now().hour)
         if not signal_res:
@@ -178,9 +198,30 @@ def main():
         else:
             failed_signal = None
 
-        # ---- Calcular monto de operación ----
+        # ========================================
+        # 1. ENTRADA: SIEMPRE DEL SETTINGS
+        # ========================================
         balance = API.get_balance()
-        trade_amount = AMOUNT
+        trade_amount = AMOUNT  # ← ENTRADA FIJA: $1.00
+        entry_text = f"${trade_amount:.2f}"
+
+        # CUENTA REAL: mínimo $1.00
+        if BALANCE_MODE == "REAL" and trade_amount < 1.0:
+            old_amount = trade_amount
+            trade_amount = 1.0
+            entry_text = f"${trade_amount:.2f} (forzado desde ${old_amount:.2f})"
+            logger.warning(f"Forzando entrada: ${old_amount:.2f} → $1.00")
+            send_telegram_message(f"Entrada ajustada: ${old_amount:.2f} → $1.00 (mínimo real)")
+
+        # Validación de balance
+        if balance < trade_amount * 1.2:
+            msg = f"Balance bajo: ${balance:.2f} < ${trade_amount * 1.2:.2f}"
+            logger.warning(msg)
+            send_telegram_message(msg)
+            time.sleep(300)
+            continue
+
+        logger.info(f"ENTRADA CONFIRMADA: ${trade_amount:.2f}")
 
         retry_text = " (reintento)" if is_retry else ""
         msg = f"Señal{retry_text} en <b>{PAIR}</b>: <b>{direction.upper()}</b>"
@@ -197,9 +238,12 @@ def main():
                 logger.info(f"Orden ejecutada: {PAIR} {direction.upper()} ${trade_amount:.2f}")
                 send_telegram_message(f"Operación abierta: {direction.upper()} ${trade_amount:.2f}")
             else:
-                logger.warning(f"API.buy falló: status={status}, id={order_id}")
+                error_msg = f"API.buy FALLÓ → status={status}, id={order_id}, monto=${trade_amount:.2f}"
+                logger.warning(error_msg)
+                send_telegram_message(error_msg)
         except Exception as e:
             logger.error(f"Error al ejecutar orden: {e}")
+            send_telegram_message(f"Error ejecutando orden: {e}")
 
         # ==== ÉXITO DE LA OPERACIÓN ====
         if order_success:
