@@ -1,0 +1,20 @@
+{
+  "ema_fast_period": 5,
+  "ema_slow_period": 21,
+  "ema_trend_period": 200,
+  "rsi_period": 14,
+  "atr_period": 14,
+  "timeframe": 60,
+  "num_candles": 250,
+  "start_hour": 8,
+  "end_hour": 20,
+  "avoid_low_volatility": true,
+  "min_atr_ratio": 0.8,
+  "min_volume_ratio": 1.1,
+  "cooldown_minutes": 5,
+  "max_retries": 2,
+  "news_avoid_before": 30,
+  "news_avoid_after": 15,
+  "news_cache_minutes": 5,
+  "enable_news_filter": true
+}

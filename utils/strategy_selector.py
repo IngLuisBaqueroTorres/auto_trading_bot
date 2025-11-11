@@ -58,6 +58,11 @@ AVAILABLE_STRATEGIES = {
         "name": "BOT v6 (Híbrido Adaptativo)",
         "module": "strategies.bot.self_adjusting_v6",
         "function": "self_adjusting_strategy_v6",
+    },
+    "self_adjusting_strategy_v7": {
+        "name": "BOT v7 (Alta Precisión)",
+        "module": "strategies.bot.self_adjusting_v7",
+        "function": "self_adjusting_strategy_v7",
     }
 }
 
