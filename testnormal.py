@@ -3,7 +3,7 @@ import logging
 import time
 logging.basicConfig(level=logging.DEBUG,format='%(asctime)s %(message)s')
 EMAIL='iingeduardobt123@gmail.com'
-PASSWORD='1IAgenesis1'
+PASSWORD='123123123123123'
 I_want_money=IQ_Option(EMAIL,PASSWORD)
 goal="EURUSD"
 print("get candles")
