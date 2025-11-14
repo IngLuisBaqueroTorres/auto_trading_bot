@@ -3,15 +3,26 @@ import tkinter as tk
 from tkinter import ttk, messagebox, Toplevel
 import subprocess
 import os
+import threading
+
+# --- CARGA DE VARIABLES DE ENTORNO ---
+# Debe ejecutarse ANTES de importar otros módulos que las necesiten.
 from dotenv import load_dotenv
+load_dotenv()
+
 from utils.strategy_selector import AVAILABLE_STRATEGIES
 from utils.config_manager import get_settings, save_settings
+from utils.logger import setup_logger
+from strategies.bot.telegram_handler import start_telegram_listener
 
 class TradingBotGUI(tk.Tk):
     def __init__(self):
         super().__init__()
         self.title("Auto Trading Bot")
         self.geometry("800x600")
+        
+        # Cargar configuración de logging
+        setup_logger()
 
         self.container = ttk.Frame(self)
         self.container.pack(side="top", fill="both", expand=True)
@@ -26,6 +37,9 @@ class TradingBotGUI(tk.Tk):
             frame = F(parent=self.container, controller=self)
             self.frames[page_name] = frame
             frame.grid(row=0, column=0, sticky="nsew")
+
+        # Iniciar el listener de Telegram en segundo plano
+        self.start_telegram_thread()
 
         self.show_frame("WelcomePage")
 
@@ -49,6 +63,13 @@ class TradingBotGUI(tk.Tk):
         if hasattr(frame, 'on_show'):
             frame.on_show()
         frame.tkraise()
+
+    def start_telegram_thread(self):
+        """Inicia el listener de Telegram en un hilo separado para no bloquear la GUI."""
+        telegram_thread = threading.Thread(target=start_telegram_listener, daemon=True)
+        telegram_thread.start()
+        # El logger ahora debería estar disponible gracias a setup_logger()
+        threading.current_thread().name = "MainGUIThread"
 
     def run_script_in_terminal(self, command):
         try:

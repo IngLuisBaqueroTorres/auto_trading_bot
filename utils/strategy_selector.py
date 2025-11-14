@@ -63,6 +63,16 @@ AVAILABLE_STRATEGIES = {
         "name": "BOT v7 (Alta Precisión)",
         "module": "strategies.bot.self_adjusting_v7",
         "function": "self_adjusting_strategy_v7",
+    },
+    "self_adjusting_strategy_markI": {
+        "name": "BOT MARK I (ML 24/7)",
+        "module": "strategies.bot.self_adjusting_markI",
+        "function": "self_adjusting_strategy_markI",
+    },
+    "markII": {
+        "name": "Self Adjusting ML Mark II",
+        "module": "strategies.bot.self_adjusting_markII",
+        "function": "self_adjusting_strategy_markII",
     }
 }
 
@@ -91,3 +101,6 @@ def select_strategy():
     
     # Devolvemos tanto la función como su nombre para usar en logs y gráficos
     return strategy_function, strategy_info["name"]
+
+
+
