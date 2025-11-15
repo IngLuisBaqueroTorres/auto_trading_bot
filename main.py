@@ -1,233 +1,194 @@
-# main.py COMPLETO (sobrescribe el viejo)
 import time
 import importlib
 from datetime import datetime
 from iqoptionapi.stable_api import IQ_Option
-from config import EMAIL
+
+from config import EMAIL, PASSWORD
 from utils.helpers import get_candle_dataframe, is_market_open
 from utils.telegram_notifier import send_telegram_message
 from utils.logger import setup_logger
 from utils.config_manager import get_settings
 from utils.strategy_selector import AVAILABLE_STRATEGIES
 from utils.trade_logger import log_trade
-from utils.news_fetcher import fetch_high_impact_news, is_news_time, is_relevant_for_pair
+from utils.news_fetcher import fetch_high_impact_news, is_news_time
 
 logger = setup_logger()
 
-def connect_iq_option(email, password, max_retries=5):
-    """Intenta conectar a IQ Option con reintentos y backoff progresivo."""
-    logger.info(f"Intentando conectar con email: {email}")
 
-    if not email or not password:
-        logger.error("Faltan credenciales en .env. Abortando ejecución.")
-        send_telegram_message("Faltan credenciales en .env. Bot detenido.")
-        return None
+def calculate_dynamic_targets(API, settings):
+    balance = API.get_balance()
 
-    API = IQ_Option(email, password)
+    if settings["USE_PERCENT_MODE"] and settings["TRAILING_STOP_ENABLED"]:
+        stop_win = balance * (settings["TRAILING_STOP_WIN_PERCENT"] / 100)
+        stop_loss = balance * (settings["TRAILING_STOP_LOSS_PERCENT"] / 100)
+    else:
+        stop_win = settings["STOP_WIN"]
+        stop_loss = settings["STOP_LOSS"]
 
-    for attempt in range(1, max_retries + 1):
-        API.connect()
-        if API.check_connect():
-            logger.info("Conectado exitosamente a IQ Option.")
-            return API
-        wait_time = 5 * attempt
-        logger.warning(f"Intento {attempt}/{max_retries} fallido. Reintentando en {wait_time}s...")
-        time.sleep(wait_time)
+    return balance, stop_win, stop_loss
 
-    logger.error("No se pudo conectar a IQ Option tras varios intentos.")
-    send_telegram_message("No se pudo conectar a IQ Option tras varios intentos. Reintentar más tarde.")
-    return None
 
-def main():
-    # === Cargar configuración ===
+def main(strategy_key):
     settings = get_settings()
-    BALANCE_MODE = settings.get("BALANCE_MODE", "PRACTICE").upper()
-    PAIR = settings.get("PAIR", "EURUSD")
-    AMOUNT = settings.get("AMOUNT", 1.0)
-    DURATION = settings.get("DURATION", 1)
-    USE_PERCENT_MODE = settings.get("USE_PERCENT_MODE", False)
-    MAX_RETRY_PER_SIGNAL = settings.get("MAX_RETRY_PER_SIGNAL", 1)
-    SIGNAL_COOLDOWN_MINUTES = settings.get("SIGNAL_COOLDOWN_MINUTES", 1)
-    SIGNAL_COOLDOWN_SECONDS = SIGNAL_COOLDOWN_MINUTES * 60
+    API = IQ_Option(EMAIL, PASSWORD)
 
-    # === STOP WIN/LOSS ===
-    if USE_PERCENT_MODE:
-        STOP_WIN = settings.get("TRAILING_STOP_WIN_PERCENT", 2.0)
-        STOP_LOSS = settings.get("TRAILING_STOP_LOSS_PERCENT", 1.0)
+    PAIR = settings["PAIR"]
+    DURATION = settings["DURATION"]
+    MIN_PAYOUT = settings["MIN_PAYOUT"]
+    trade_amount = settings["AMOUNT"]
+
+    logger.info(f"=== Bot iniciado con estrategia: {strategy_key} ===")
+
+    connected, reason = API.connect()
+    if not connected:
+        logger.error(f"No conecta: {reason}")
+        send_telegram_message(f"❌ Error conectando: {reason}")
+        return
+
+    API.change_balance(settings["BALANCE_MODE"])
+
+    # === Estrategia cargada dinámicamente ===
+    strategy_info = AVAILABLE_STRATEGIES[strategy_key]
+    module = importlib.import_module(strategy_info["module"])
+    selected_strategy = getattr(module, strategy_info["function"])
+
+    # === Calcular metas ===
+    initial_balance, stop_win, stop_loss = calculate_dynamic_targets(API, settings)
+    current_target = initial_balance + stop_win
+    lower_limit = initial_balance - stop_loss
+
+    # === ENVIAR INFORMACIÓN DETALLADA A TELEGRAM ===
+    if settings["USE_PERCENT_MODE"] and settings["TRAILING_STOP_ENABLED"]:
+        msg = (
+            f"🚀 Bot iniciado\n"
+            f"📌 Estrategia: {strategy_key}\n"
+            f"💱 Par: {PAIR}\n"
+            f"💵 Balance inicial: {initial_balance}\n\n"
+            f"📊 Modo: *Porcentual*\n"
+            f"➡️ STOP WIN: {stop_win:.2f} ({settings['TRAILING_STOP_WIN_PERCENT']}%)\n"
+            f"➡️ STOP LOSS: {stop_loss:.2f} ({settings['TRAILING_STOP_LOSS_PERCENT']}%)\n"
+            f"🎯 Meta inicial: {current_target:.2f}\n"
+        )
     else:
-        STOP_WIN = settings.get("STOP_WIN", 10.0)
-        STOP_LOSS = settings.get("STOP_LOSS", 5.0)
+        msg = (
+            f"🚀 Bot iniciado\n"
+            f"📌 Estrategia: {strategy_key}\n"
+            f"💱 Par: {PAIR}\n"
+            f"💵 Balance inicial: {initial_balance}\n\n"
+            f"📊 Modo: *Fijo*\n"
+            f"➡️ STOP WIN fijo: {stop_win}\n"
+            f"➡️ STOP LOSS fijo: {stop_loss}\n"
+            f"🎯 Meta inicial: {current_target:.2f}\n"
+        )
 
-    # === Cargar estrategia ===
-    STRATEGY_NAME = settings.get("STRATEGY", "self_adjusting_strategy_v6")
-    strategy_info = AVAILABLE_STRATEGIES.get(STRATEGY_NAME)
-    if not strategy_info:
-        logger.error(f"Estrategia '{STRATEGY_NAME}' no encontrada.")
-        send_telegram_message(f"Estrategia '{STRATEGY_NAME}' no existe.")
-        return
+    send_telegram_message(msg)
 
-    try:
-        module = importlib.import_module(strategy_info["module"])
-        selected_strategy = getattr(module, strategy_info["function"])
-        if not callable(selected_strategy):
-            raise AttributeError("La función no es callable")
-    except Exception as e:
-        logger.error(f"Error al cargar estrategia: {e}")
-        send_telegram_message("Error crítico al cargar estrategia.")
-        return
-
-    # === Conexión IQ Option ===
-    EMAIL = settings.get("EMAIL")
-    PASSWORD = settings.get("PASSWORD")
-    API = connect_iq_option(EMAIL, PASSWORD)
-    if API is None:
-        return
-    API.change_balance(BALANCE_MODE)
-    initial_balance = API.get_balance()
-    current_balance = initial_balance
-
-    # === Configurar STOP ===
-    if not USE_PERCENT_MODE:
-        target_balance = initial_balance + STOP_WIN
-        stop_balance = initial_balance - STOP_LOSS
-    else:
-        target_balance = initial_balance * (1 + STOP_WIN / 100)
-        stop_balance = initial_balance * (1 - STOP_LOSS / 100)
-
-    send_telegram_message(
-        f"Bot iniciado en {BALANCE_MODE} | Par: {PAIR}\n"
-        f"Balance inicial: ${initial_balance:.2f} | Entrada: ${AMOUNT:.2f}"
-    )
-
-    # === Variables de control ===
     last_signal = None
     last_order_time = 0
-    failed_signal = None
-    failed_signal_time = 0
-    total_pnl = 0.0
+    skip_news_until = 0
 
     while True:
-        if not API.check_connect():
-            API = connect_iq_option(EMAIL, PASSWORD)
-            if API is None:
-                break
-            API.change_balance(BALANCE_MODE)
-            continue
-
-        if not is_market_open(API, PAIR):
-            time.sleep(600)
-            continue
-
-        candles = get_candle_dataframe(API, PAIR, 60, 30)
-        if candles is None or len(candles) < 20:
-            time.sleep(5)
-            continue
-
-        # --- Noticias ---
         try:
-            all_news = fetch_high_impact_news()
-            relevant_news = is_relevant_for_pair(all_news, PAIR)
-            if is_news_time(datetime.now(), relevant_news, before=20, after=10):
-                time.sleep(300)
+            now_ts = time.time()
+            now = datetime.now()
+
+            # === 1. Mercado abierto REAL ===
+            if not is_market_open(API, PAIR):
+                logger.info("Mercado cerrado. Esperando…")
+                time.sleep(60)
                 continue
-        except:
-            time.sleep(60)
 
-        # --- Generar señal ---
-        signal_res = selected_strategy(candles, last_signal, current_hour=datetime.now().hour)
-        if not signal_res:
-            time.sleep(5)
-            continue
+            # === 2. Noticias fuertes ===
+            if now_ts > skip_news_until:
+                news_events = fetch_high_impact_news()
 
-        direction = signal_res.get("direction")
-        current_time = time.time()
-        if signal_res == last_signal and (current_time - last_order_time) < 70:
-            time.sleep(60)
-            continue
+                if news_events and is_news_time(now, news_events):
+                    send_telegram_message("⛔ Noticias fuertes — pausa 5 minutos")
+                    skip_news_until = now_ts + 300
+                    time.sleep(60)
+                    continue
 
-        # --- Reintentos ---
-        is_retry = False
-        if failed_signal and failed_signal.get("direction") == direction and (current_time - failed_signal_time) < 120:
-            retries = failed_signal.get("retries", 0)
-            if retries >= MAX_RETRY_PER_SIGNAL:
-                remaining = SIGNAL_COOLDOWN_SECONDS - (current_time - failed_signal_time)
-                if remaining > 0:
-                    time.sleep(min(remaining, 60))
+            # === 3. Control SL / SW ===
+            balance = API.get_balance()
+
+            if balance <= lower_limit:
+                send_telegram_message(
+                    f"🟥 STOP LOSS alcanzado\nBalance final: {balance}"
+                )
+                return
+
+            if balance >= current_target:
+                if settings["USE_PERCENT_MODE"] and settings["TRAILING_STOP_ENABLED"]:
+                    send_telegram_message(
+                        "🟩 Meta porcentual alcanzada → recalculando metas…"
+                    )
+
+                    current_balance = balance
+                    stop_win = current_balance * (
+                        settings["TRAILING_STOP_WIN_PERCENT"] / 100
+                    )
+                    current_target = current_balance + stop_win
+
+                else:
+                    send_telegram_message(
+                        f"🟩 STOP WIN alcanzado\nBalance final: {balance}"
+                    )
+                    return
+
+            # === 4. Payout mínimo ===
+            payout = API.get_digital_payout(PAIR)
+            if payout is None or payout < MIN_PAYOUT:
+                time.sleep(60)
                 continue
-            is_retry = True
-        else:
-            failed_signal = None
 
-        balance = API.get_balance()
-        trade_amount = AMOUNT
-        if BALANCE_MODE == "REAL" and trade_amount < 1.0:
-            trade_amount = 1.0
+            # === 5. Velas ===
+            candles = get_candle_dataframe(API, PAIR, 60, 20)
+            if candles is None or len(candles) < 20:
+                time.sleep(5)
+                continue
 
-        # --- Ejecutar orden según tipo ---
-        order_success = False
-        order_id = None
-        try:
-            if "-OTC" in PAIR:
-                status, order_id = API.buy(trade_amount, PAIR, direction, DURATION)
-            else:
-                status, order_id = API.buy_digital_spot(PAIR, trade_amount, direction, DURATION)
+            # === 6. Señal ===
+            signal = selected_strategy(candles, last_signal, current_hour=now.hour)
 
-            if status:
-                order_success = True
+            if not signal:
+                last_signal = None
+                time.sleep(1)
+                continue
+
+            direction = signal.get("direction")
+
+            # Evitar doble entrada muy seguida en la misma dirección
+            if last_signal and direction == last_signal.get("direction"):
+                if (now_ts - last_order_time) < 70:
+                    time.sleep(2)
+                    continue
+
+            # === 7. Operación ===
+            status, order_id = API.buy_digital_spot(
+                PAIR, trade_amount, direction, DURATION
+            )
+            if not status:
+                send_telegram_message("❌ Error enviando la operación.")
+                continue
+
+            check, win_amount = API.check_win_digital_v2(order_id)
+            result = "WIN" if win_amount > 0 else "LOSS"
+            profit = round(win_amount, 3)
+
+            send_telegram_message(f"🎯 {result} | Ganancia: {profit}")
+            log_trade(result, profit, direction, PAIR, trade_amount, signal)
+
+            last_signal = signal
+            last_order_time = now_ts
+            time.sleep(2)
+
         except Exception as e:
-            logger.error(f"Error al ejecutar orden: {e}")
+            logger.error(f"Error ciclo: {e}")
+            time.sleep(5)
+            continue
 
-        if order_success:
-            last_signal = signal_res
-            last_order_time = current_time
-            failed_signal = None
-
-            # --- Esperar resultado ---
-            time.sleep(DURATION * 60 + 5)
-            if "-OTC" in PAIR:
-                profit = API.check_win_v3(order_id)
-            else:
-                check, profit = API.check_win_digital(order_id)
-
-            result = "win" if profit > 0 else "loss" if profit < 0 else "draw"
-
-            # --- Actualizar modelos ML ---
-            try:
-                from strategies.bot.self_adjusting_markI import markI_update_result
-                from strategies.bot.self_adjusting_markII import markII_update_result
-                if result in ["win", "loss"] and last_signal:
-                    try: markI_update_result(candles, last_signal, result)
-                    except: pass
-                    if "markii" in STRATEGY_NAME.lower() or selected_strategy.__name__ == "self_adjusting_strategy_markII":
-                        markII_update_result(candles, last_signal, result)
-            except:
-                pass
-
-            new_balance = API.get_balance()
-            total_pnl += profit
-            log_trade({**signal_res, "result": result, "profit": profit, "balance": new_balance})
-
-            current_balance = new_balance
-
-            # --- Stop Win / Loss ---
-            if not USE_PERCENT_MODE:
-                if current_balance >= target_balance or current_balance <= stop_balance:
-                    break
-            else:
-                if current_balance >= target_balance:
-                    target_balance = current_balance * (1 + STOP_WIN / 100)
-                    stop_balance = current_balance * (1 - STOP_LOSS / 100)
-                elif current_balance <= stop_balance:
-                    break
-
-        else:
-            retries = (failed_signal.get("retries", 0) if failed_signal else 0) + 1
-            failed_signal = {**signal_res, "retries": retries}
-            failed_signal_time = current_time
-            if retries >= MAX_RETRY_PER_SIGNAL:
-                time.sleep(SIGNAL_COOLDOWN_SECONDS)
-            else:
-                time.sleep(30)
 
 if __name__ == "__main__":
-    main()
+    import sys
+    strategy_key = sys.argv[1] if len(sys.argv) > 1 else "markII"
+    main(strategy_key)

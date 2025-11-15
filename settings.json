@@ -1,6 +1,6 @@
 {
     "BALANCE_MODE": "PRACTICE",
-    "PAIR": "EURUSD",
+    "PAIR": "EURUSD-OTC",
     "AMOUNT": 1.0,
     "DURATION": 1,
     "STOP_WIN": 20.0,
@@ -8,5 +8,6 @@
     "TRAILING_STOP_ENABLED": true,
     "USE_PERCENT_MODE": true,
     "TRAILING_STOP_WIN_PERCENT": 1.0,
-    "TRAILING_STOP_LOSS_PERCENT": 90.0
+    "TRAILING_STOP_LOSS_PERCENT": 90.0,
+    "MIN_PAYOUT": 1.0
 }
